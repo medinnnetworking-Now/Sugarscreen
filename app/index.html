@@ -1,0 +1,675 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DiaScreen: diabetic complication screening</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EAF0EF;--surface:#FFFFFF;--sunk:#F4F7F6;--ink:#10242E;--muted:#52656C;--line:#D2DCDA;
+  --primary:#0D5C61;--primary-ink:#FFFFFF;--primary-soft:#D9ECEA;
+  --green:#256F43;--amber:#8C5A0E;--red:#A83131;--na:#66767C;
+  --green-bg:#DFF0E5;--amber-bg:#F9ECD3;--red-bg:#F6DEDD;--na-bg:#E6ECEC;
+  --seg-green:#3E9A63;--seg-amber:#D9952B;--seg-orange:#E0702E;--seg-red:#CF4A43;--seg-na:#C3CECC;
+  color-scheme:light;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0D191E;--surface:#14232A;--sunk:#0F1D23;--ink:#E3ECED;--muted:#93A6AC;--line:#263A41;
+    --primary:#5DBDB8;--primary-ink:#06201F;--primary-soft:#173A3B;
+    --green:#7ACB98;--amber:#E8B25E;--red:#F08A84;--na:#8EA0A6;
+    --green-bg:#16301F;--amber-bg:#3A2C12;--red-bg:#3C1D1C;--na-bg:#1C2D33;
+    --seg-green:#4FAE74;--seg-amber:#E0A23C;--seg-orange:#E57F42;--seg-red:#DB5B54;--seg-na:#33474E;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0D191E;--surface:#14232A;--sunk:#0F1D23;--ink:#E3ECED;--muted:#93A6AC;--line:#263A41;
+  --primary:#5DBDB8;--primary-ink:#06201F;--primary-soft:#173A3B;
+  --green:#7ACB98;--amber:#E8B25E;--red:#F08A84;--na:#8EA0A6;
+  --green-bg:#16301F;--amber-bg:#3A2C12;--red-bg:#3C1D1C;--na-bg:#1C2D33;
+  --seg-green:#4FAE74;--seg-amber:#E0A23C;--seg-orange:#E57F42;--seg-red:#DB5B54;--seg-na:#33474E;
+  color-scheme:dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 'Atkinson Hyperlegible',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--surface)}
+img{max-width:100%}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:6px;padding:6px 8px;min-height:56px}
+.bar h1{font-size:1.06rem;margin:0 0 0 4px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mark{display:inline-flex;width:44px;height:44px;align-items:center;justify-content:center}
+.mark svg{width:28px;height:28px}
+.icon-btn{width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;border:0;background:transparent;color:var(--ink);border-radius:10px;cursor:pointer;flex:none}
+.icon-btn svg{width:22px;height:22px}
+.icon-btn:hover{background:var(--sunk)}
+main{max-width:600px;margin:0 auto;padding:16px 14px 56px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;margin:0 0 14px}
+h2{font-size:1.18rem;line-height:1.3;margin:0 0 6px}
+h3{font-size:1.02rem;margin:0 0 8px}
+h4{font-size:.95rem;margin:14px 0 6px}
+.sect{margin:22px 2px 10px;color:var(--muted);font-size:.95rem;font-weight:700}
+.sub{color:var(--muted);font-size:.9rem;margin:0 0 10px}
+.fine{color:var(--muted);font-size:.82rem;line-height:1.45}
+.field{display:block;margin:0 0 12px}
+.lab{display:block;font-size:.88rem;color:var(--muted);margin:0 0 5px;font-weight:700}
+.inp{display:flex;align-items:center;border:1px solid var(--line);border-radius:10px;background:var(--sunk)}
+.inp input,.inp select{flex:1;min-width:0;border:0;background:transparent;font:inherit;color:inherit;padding:11px 12px;outline:none}
+.inp select{appearance:auto}
+.inp em{font-style:normal;color:var(--muted);padding-right:12px;font-size:.85rem;white-space:nowrap}
+.inp:focus-within{outline:2px solid var(--primary);outline-offset:1px}
+.calc{padding:11px 12px;border:1px dashed var(--line);border-radius:10px;font-weight:700}
+.calc em{font-style:normal;font-weight:400;color:var(--muted);font-size:.85rem}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+@media (max-width:360px){.grid2{grid-template-columns:1fr}}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px}
+.chip{position:relative}
+.chip input{position:absolute;opacity:0;width:1px;height:1px}
+.chip span{display:inline-block;padding:8px 13px;border:1px solid var(--line);border-radius:999px;background:var(--sunk);font-size:.92rem;cursor:pointer;line-height:1.3}
+.chip input:checked+span{background:var(--primary);color:var(--primary-ink);border-color:var(--primary);font-weight:700}
+.chip input:focus-visible+span{outline:2px solid var(--primary);outline-offset:2px}
+.check{display:flex;gap:10px;align-items:flex-start;padding:7px 0;cursor:pointer;font-size:.95rem}
+.check input{width:20px;height:20px;margin:2px 0 0;accent-color:var(--primary);flex:none}
+.checks{margin:0 0 12px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font:inherit;font-weight:700;border-radius:10px;padding:10px 16px;border:1px solid transparent;cursor:pointer;min-height:44px;text-decoration:none;color:inherit;background:none}
+.btn svg{width:18px;height:18px}
+.btn.sm{min-height:40px;padding:8px 12px;font-size:.92rem}
+.btn.pri{background:var(--primary);color:var(--primary-ink)}
+.btn.sec{background:var(--primary-soft);color:var(--primary)}
+.btn.ghost{color:var(--muted);border-color:var(--line)}
+.btn.danger{color:var(--red);border-color:var(--line)}
+.btn.danger-fill{background:var(--red);color:#fff}
+.btn.block{width:100%}
+.btn:focus-visible,.icon-btn:focus-visible,.row:focus-visible,.seg:focus-visible,.site:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.btn[disabled],.row[disabled],.seg[disabled]{opacity:.45;cursor:not-allowed}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.err{color:var(--red);font-size:.9rem;min-height:1.2em;margin:0 0 10px}
+
+/* login */
+.login{padding-top:8vh}
+.brand{display:flex;gap:14px;align-items:center;margin:0 4px 22px}
+.brand svg{width:58px;height:58px;flex:none}
+.wordmark{font-size:2rem;font-weight:700;letter-spacing:-.02em;margin:0;line-height:1.1}
+.demo{margin:14px 0 0;text-align:center}
+
+/* organ strip: the signature element */
+.strip{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;margin:14px 0 0}
+.seg{display:flex;flex-direction:column;gap:5px;background:none;border:0;padding:0;font:inherit;color:inherit;text-align:left;cursor:pointer;min-width:0}
+.seg i{display:block;height:16px;background:var(--seg-na)}
+.seg:first-child i{border-radius:8px 0 0 8px}
+.seg:last-child i{border-radius:0 8px 8px 0}
+.seg.green i{background:var(--seg-green)}
+.seg.amber i{background:var(--seg-amber)}
+.seg.red i{background:var(--seg-red)}
+.seg b{font-size:.8rem;padding-left:2px}
+.seg small{font-size:.7rem;color:var(--muted);line-height:1.2;padding-left:2px;overflow-wrap:anywhere}
+
+.pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:.8rem;font-weight:700;white-space:nowrap;background:var(--na-bg);color:var(--na)}
+.pill.green{background:var(--green-bg);color:var(--green)}
+.pill.amber{background:var(--amber-bg);color:var(--amber)}
+.pill.red{background:var(--red-bg);color:var(--red)}
+
+.homehead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin:0 0 14px}
+.homehead .sub{margin:0}
+.row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:13px 14px;margin:0 0 8px;font:inherit;color:inherit;cursor:pointer}
+.row:hover:not([disabled]){border-color:var(--primary)}
+.rowmain{flex:1;min-width:0;display:flex;flex-direction:column}
+.rowmain .sub{margin:2px 0 0;font-size:.85rem}
+.dots{display:flex;gap:3px;flex:none}
+.dots i{width:9px;height:22px;border-radius:3px;background:var(--seg-na)}
+.dots i.green{background:var(--seg-green)}.dots i.amber{background:var(--seg-amber)}.dots i.red{background:var(--seg-red)}
+.empty{text-align:center;padding:28px 18px}
+
+.pthead{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.pthead .sub{margin:0}
+.visitsel{display:flex;gap:10px;align-items:flex-end;margin-top:14px}
+.visitsel .field{flex:1;margin:0}
+.consent{border-left:5px solid var(--seg-amber)}
+.consent.ok{border-left-color:var(--seg-green)}
+.dz{display:flex;gap:10px;flex-wrap:wrap;margin-top:28px;justify-content:center}
+
+/* result panel */
+.live{border-left:5px solid var(--seg-na)}
+.live.green{border-left-color:var(--seg-green)}
+.live.amber{border-left-color:var(--seg-amber)}
+.live.red{border-left-color:var(--seg-red)}
+.livehead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
+.livehead h3,.livehead .lab{margin:0}
+.lines,.acts,.refs{margin:0;padding:0;list-style:none}
+.lines li{position:relative;padding:4px 0 4px 18px;font-size:.94rem}
+.lines li::before{content:"";position:absolute;left:2px;top:.72em;width:8px;height:8px;border-radius:50%;background:var(--seg-na)}
+.lines li.green::before{background:var(--seg-green)}
+.lines li.amber::before{background:var(--seg-amber)}
+.lines li.red::before{background:var(--seg-red)}
+.acts li{padding:6px 0 6px 18px;position:relative;font-size:.94rem;border-top:1px solid var(--line)}
+.acts li:first-child{border-top:0}
+.acts li::before{content:"";position:absolute;left:3px;top:1em;width:7px;height:2px;background:var(--primary)}
+.recall{margin:12px 0 0;padding:10px 12px;background:var(--sunk);border-radius:10px;font-size:.92rem}
+.refs li{padding:5px 0;font-size:.88rem;color:var(--muted);border-top:1px solid var(--line)}
+.refs li:first-child{border-top:0}
+
+/* images and tools */
+.imgblk{margin:4px 0 14px}
+.imgbtns{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.imgbtns label{position:relative}
+.hint{border:1.5px dashed var(--line);border-radius:12px;padding:18px;text-align:center;color:var(--muted);font-size:.9rem;margin:0}
+.preview{display:block;width:100%;border-radius:12px;background:#000}
+.qual{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px}
+.qual .sub{margin:0;font-size:.8rem}
+.tool canvas{display:block;width:100%;height:auto;border-radius:12px;background:#000;touch-action:manipulation;cursor:crosshair}
+.toolrow{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-top:10px}
+.field.mini{margin:0;flex:1;min-width:150px}
+.measure{margin:10px 0 0;font-size:.95rem}
+.auto{font-weight:400;color:var(--primary);font-size:.8rem}
+.note{background:var(--sunk)}
+.note .sub{margin:0}
+.suggest{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--primary-soft);border-radius:10px;padding:8px 8px 8px 12px;margin:0 0 14px;font-size:.92rem}
+
+.feet{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.site{display:flex;justify-content:space-between;align-items:center;gap:6px;width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--sunk);font:inherit;font-size:.92rem;color:inherit;margin-bottom:6px;cursor:pointer;min-height:44px}
+.site.felt{background:var(--green-bg);border-color:var(--seg-green)}
+.site.felt b{color:var(--green)}
+.site.not{background:var(--red-bg);border-color:var(--seg-red)}
+.site.not b{color:var(--red)}
+
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+.kd th,.kd td{border:2px solid var(--surface);text-align:center;padding:5px 2px}
+.kd thead th{font-weight:700;line-height:1.15}
+.kd small{font-weight:400;color:var(--muted)}
+.kd td{height:28px;color:#fff;font-size:1rem}
+.kd td.green{background:var(--seg-green)}.kd td.amber{background:var(--seg-amber)}.kd td.orange{background:var(--seg-orange)}.kd td.red{background:var(--seg-red)}
+.kd td.cur{outline:3px solid var(--ink);outline-offset:-3px}
+.cmp th,.cmp td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line)}
+.cmp th{color:var(--muted);font-size:.82rem}
+.summary{margin:16px 0 0;font-size:.98rem}
+
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--ink);color:var(--surface);padding:12px 16px;border-radius:12px;font-size:.92rem;max-width:min(92vw,520px);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:50}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+.modal{position:fixed;inset:0;background:rgba(5,15,18,.55);display:flex;align-items:flex-end;justify-content:center;z-index:60;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px))}
+.sheet{background:var(--surface);color:var(--ink);border-radius:16px;padding:18px;width:100%;max-width:440px}
+.sheet p{margin:0 0 16px;font-size:1rem}
+.sheetbtns{display:flex;gap:10px;justify-content:flex-end}
+@media (prefers-reduced-motion:reduce){#toast{transition:none}}
+@media print{
+  .bar,.noprint,#toast,body::before{display:none!important}
+  body{background:#fff;color:#000}
+  main{max-width:none;padding:0}
+  .card{break-inside:avoid;border-color:#bbb}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+<script>
+'use strict';
+/* ---------- constants ---------- */
+const KEY='diascreen.v1',SKEY='diascreen.session',IDLE_MS=15*60*1000;
+const CREDS={u:'clinician',p:'screen2026'};
+const LOGO='<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="22" fill="none" stroke="var(--line)" stroke-width="2"/><path d="M24 4a20 20 0 0 1 20 20H24z" fill="var(--seg-green)"/><path d="M44 24a20 20 0 0 1-20 20V24z" fill="var(--seg-amber)"/><path d="M24 44A20 20 0 0 1 4 24h20z" fill="var(--seg-red)"/><path d="M4 24A20 20 0 0 1 24 4v20z" fill="var(--primary)"/><circle cx="24" cy="24" r="8" fill="var(--surface)"/></svg>';
+const I={
+ back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>',
+ out:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 16l-4-4 4-4M6 12h10"/></svg>',
+ info:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg>',
+ print:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M7 9V3h10v6M7 17H4v-7h16v7h-3M7 14h10v7H7z"/></svg>',
+ cam:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h4l2-3h6l2 3h4v11H3z"/><circle cx="12" cy="13" r="3.5"/></svg>'
+};
+const DIP={
+ protein:{name:'Protein',levels:['Negative','Trace','30 mg/dL (1+)','100 mg/dL (2+)','300 mg/dL (3+)','≥2000 mg/dL (4+)'],colors:['#E2E36B','#CFDE77','#B3D38B','#93C595','#73B3A0','#4E9C98']},
+ glucose:{name:'Glucose',levels:['Negative','100 mg/dL','250 mg/dL','500 mg/dL','1000 mg/dL','≥2000 mg/dL'],colors:['#89CED3','#97CBA6','#A4B87A','#A28F50','#8C643A','#6E4628']},
+ ketones:{name:'Ketones',levels:['Negative','Trace (5 mg/dL)','Small (15 mg/dL)','Moderate (40 mg/dL)','Large (80 mg/dL)','Large (160 mg/dL)'],colors:['#E8C9A9','#E2A99C','#D58A8E','#BD627B','#9C3D63','#7A2650']},
+ blood:{name:'Blood',levels:['Negative','Trace','Small (1+)','Moderate (2+)','Large (3+)'],colors:['#E9C25A','#CBC25E','#9FB55C','#6F9C52','#3F7B47']},
+ leukocytes:{name:'Leukocytes',levels:['Negative','Trace','Small (1+)','Moderate (2+)','Large (3+)'],colors:['#EDE7CF','#DDD0D2','#CAB2CA','#AA8CB5','#83679F']},
+ nitrite:{name:'Nitrite',levels:['Negative','Positive'],colors:['#F3EEE4','#E8B6C1']}
+};
+const ANALYTES=Object.keys(DIP);
+const ICDR=['No apparent DR','Mild NPDR','Moderate NPDR','Severe NPDR','Proliferative DR'];
+const LES=[['ma','Microaneurysms'],['hem','Intraretinal haemorrhages'],['ex','Hard exudates'],['cws','Cotton-wool spots'],['h4q','More than 20 haemorrhages in each of 4 quadrants'],['vb','Venous beading in 2 or more quadrants'],['irma','Prominent IRMA in 1 or more quadrants'],['nv','Neovascularisation of disc or elsewhere'],['vh','Vitreous or preretinal haemorrhage'],['mac','Exudates or thickening within 1 disc diameter of the fovea']];
+const SITES=[['R1','Right big toe'],['R3','Right 3rd toe'],['R5','Right 5th toe'],['L1','Left big toe'],['L3','Left 3rd toe'],['L5','Left 5th toe']];
+const SYM=[['burn','Burning pain in feet or legs'],['numb','Numbness'],['ting','Tingling or pins and needles'],['night','Pain worse at night'],['auto','Dizziness on standing, early satiety, or sweating changes']];
+const GCAT=[[90,'G1'],[60,'G2'],[45,'G3a'],[30,'G3b'],[15,'G4'],[0,'G5']];
+const RISK={G1:['low','mod','high'],G2:['low','mod','high'],G3a:['mod','high','vhigh'],G3b:['high','vhigh','vhigh'],G4:['vhigh','vhigh','vhigh'],G5:['vhigh','vhigh','vhigh']};
+const ORDER={na:0,green:1,amber:2,red:3};
+
+/* ---------- storage and session ---------- */
+let DB={patients:[]};
+try{const raw=localStorage.getItem(KEY);if(raw){const d=JSON.parse(raw);if(d&&Array.isArray(d.patients))DB=d}}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(DB));return true}catch(e){toast('Device storage is full. Remove images or delete old patients to keep saving.');return false}}
+let saveT;function saveSoon(){clearTimeout(saveT);saveT=setTimeout(save,400)}
+let session=null;
+try{session=JSON.parse(sessionStorage.getItem(SKEY)||'null')}catch(e){}
+function setSession(s){try{s?sessionStorage.setItem(SKEY,JSON.stringify(s)):sessionStorage.removeItem(SKEY)}catch(e){}}
+let lastAct=Date.now();
+['pointerdown','keydown','touchstart'].forEach(ev=>document.addEventListener(ev,()=>{lastAct=Date.now()},{passive:true}));
+setInterval(()=>{if(session&&Date.now()-lastAct>IDLE_MS)logout('You were signed out after 15 minutes of inactivity.')},30000);
+function logout(msg){session=null;setSession(null);route={v:'login',msg:msg||''};render()}
+
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Date.now().toString(36).slice(-4).toUpperCase()+Math.random().toString(36).slice(2,6).toUpperCase();
+const nz=x=>(x===''||x==null||isNaN(Number(x)))?null:Number(x);
+const worst=a=>a.reduce((m,x)=>ORDER[x]>ORDER[m]?x:m,'na');
+const fmtD=d=>new Date(d).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+function getP(o,p){return p.split('.').reduce((a,k)=>a==null?undefined:a[k],o)}
+function setP(o,p,v){const ks=p.split('.');let a=o;ks.slice(0,-1).forEach(k=>{if(a[k]==null||typeof a[k]!=='object')a[k]={};a=a[k]});a[ks[ks.length-1]]=v}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('on'),3800)}
+function ask(msg,ok,cb){const d=document.createElement('div');d.className='modal';d.innerHTML=`<div class="sheet" role="alertdialog" aria-modal="true" aria-labelledby="mq"><p id="mq">${esc(msg)}</p><div class="sheetbtns"><button class="btn ghost" data-m="0">Cancel</button><button class="btn danger-fill" data-m="1">${esc(ok)}</button></div></div>`;document.body.appendChild(d);d.querySelector('[data-m="0"]').focus();d.addEventListener('click',e=>{const b=e.target.closest('[data-m]');if(!b&&e.target!==d)return;d.remove();if(b&&b.dataset.m==='1')cb()})}
+
+let route=session?{v:'home'}:{v:'login'};
+let dipTarget='white',woundMode='cal';
+function P(){return DB.patients.find(p=>p.id===route.pid)}
+function V(){const p=P();return p&&p.visits.find(x=>x.id===route.vid)}
+function go(v,params={}){route={v,...params};render();window.scrollTo(0,0)}
+
+function newVisit(prev){const s=prev&&prev.status||{};const carry={};['dmtype','duration','insulin','sglt2','height'].forEach(k=>{if(s[k]!=null)carry[k]=s[k]});
+ return{id:uid(),date:new Date().toISOString(),consent:false,status:carry,retina:{R:{},L:{}},kidney:{dip:{},dipPts:{},dipM:{}},foot:{itt:{},ulcer:{},wound:{cal:[],poly:[],calLen:2}},ccm:{sym:{}},images:{}}}
+function ensureV(v){if(!v)return;v.status=v.status||{};v.retina=v.retina||{};v.retina.R=v.retina.R||{};v.retina.L=v.retina.L||{};v.kidney=v.kidney||{};['dip','dipPts','dipM'].forEach(k=>{v.kidney[k]=v.kidney[k]||{}});v.foot=v.foot||{};v.foot.itt=v.foot.itt||{};v.foot.ulcer=v.foot.ulcer||{};v.foot.wound=v.foot.wound||{cal:[],poly:[],calLen:2};v.ccm=v.ccm||{};v.ccm.sym=v.ccm.sym||{};v.images=v.images||{}}
+
+/* ---------- clinical logic ---------- */
+function egfr(scr,age,sex){scr=nz(scr);age=nz(age);if(scr==null||age==null||scr<=0||(sex!=='male'&&sex!=='female'))return null;
+ const f=sex==='female',k=f?0.7:0.9,a=f?-0.241:-0.302;
+ return Math.round(142*Math.pow(Math.min(scr/k,1),a)*Math.pow(Math.max(scr/k,1),-1.2)*Math.pow(0.9938,age)*(f?1.012:1))}
+
+function evalStatus(v,p){const s=v.status||{},L=[],A=[],lv=[];
+ const a1=nz(s.hba1c);
+ if(a1!=null){if(a1<7){lv.push('green');L.push(['green',`HbA1c ${a1}%: at general target (<7%)`])}
+  else if(a1<9){lv.push('amber');L.push(['amber',`HbA1c ${a1}%: above target`]);A.push('Intensify glucose-lowering therapy toward an individualised HbA1c target (usually <7%).')}
+  else{lv.push('red');L.push(['red',`HbA1c ${a1}%: poor control`]);A.push('Review adherence, diet and therapy; consider early insulin if HbA1c ≥10% or symptomatic hyperglycaemia.')}}
+ const fpg=nz(s.fpg);if(fpg!=null){const g=fpg>=80&&fpg<=130;lv.push(g?'green':'amber');L.push([g?'green':'amber',`Fasting glucose ${fpg} mg/dL${g?'':' (target 80–130)'}`])}
+ const ppg=nz(s.ppg);if(ppg!=null){const g=ppg<180;lv.push(g?'green':'amber');L.push([g?'green':'amber',`Post-meal glucose ${ppg} mg/dL${g?'':' (target <180)'}`])}
+ const sb=nz(s.sbp),db=nz(s.dbp);
+ if(sb!=null||db!=null){const S=sb??0,D=db??0;let l='green',t='at target (<130/80)';if(S>=160||D>=100){l='red';t='markedly raised'}else if(S>=130||D>=80){l='amber';t='above target'}
+  lv.push(l);L.push([l,`BP ${sb??'–'}/${db??'–'} mmHg: ${t}`]);if(l!=='green')A.push('Treat BP to <130/80 mmHg where safe; ACE inhibitor or ARB first-line if albuminuria is present.')}
+ const w=nz(s.weight),h=nz(s.height);
+ if(w&&h){const b=w/((h/100)**2);let l='green',t='normal (Asian cut-off <23)';if(b>=25){l='amber';t='obese (Asian cut-off ≥25)'}else if(b>=23){l='amber';t='overweight (Asian cut-off 23–24.9)'}else if(b<18.5){l='amber';t='underweight'}
+  lv.push(l);L.push([l,`BMI ${b.toFixed(1)} kg/m²: ${t}`]);if(b>=23)A.push('Structured lifestyle and weight management; consider a GLP-1 receptor agonist or SGLT2 inhibitor where indicated.')}
+ const ldl=nz(s.ldl);if(ldl!=null){const l=ldl<70?'green':'amber';lv.push(l);L.push([l,`LDL-C ${ldl} mg/dL${ldl<70?'':' (target <70; <55 with ASCVD)'}`]);if(ldl>=70)A.push('Start or intensify statin therapy according to cardiovascular risk.')}
+ if(s.smoker==='yes'){lv.push('amber');L.push(['amber','Current tobacco use']);A.push('Advise and support tobacco cessation.')}
+ const e=egfr(s.creat,p.age,p.sex);if(e!=null)L.push(['na',`eGFR ${e} mL/min/1.73m² (CKD-EPI 2021); interpreted in Kidney`]);
+ const level=worst(lv);
+ return{level,tag:{na:'Not assessed',green:'At target',amber:'Above target',red:'Poor control'}[level],lines:L,actions:[...new Set(A)],recall:level==='na'?'':'HbA1c every 3 months until at target, then every 6 months.'}}
+
+function suggest(e){const l=e.les||{};if(l.nv||l.vh)return 4;if(l.h4q||l.vb||l.irma)return 3;if(l.hem||l.ex||l.cws)return 2;if(l.ma)return 1;return 0}
+function evalRetina(v){const r=v.retina||{},L=[],A=[];let any=false,ung=false,wg=-1,dme=false;
+ for(const [k,n] of [['R','Right eye'],['L','Left eye']]){const e=r[k]||{};
+  if(e.gradable==='no'){any=true;ung=true;L.push(['amber',`${n}: ungradable image`]);continue}
+  const g=nz(e.grade),d=e.dme==='yes';if(g==null&&!d)continue;any=true;if(g!=null)wg=Math.max(wg,g);if(d)dme=true;
+  const l=(d||g>=3)?'red':(g>=1?'amber':'green');L.push([l,`${n}: ${g!=null?ICDR[g]:'grade not set'}${d?', diabetic macular oedema':''}`])}
+ if(!any)return{level:'na',tag:'Not assessed',lines:[],actions:[],recall:''};
+ let level='green',tag=wg>=0?ICDR[wg]:'Not graded',recall='Rescreen in 12 months (every 1–2 years if no DR on serial exams and glycaemia is well controlled).';
+ if(wg===1){level='amber';recall='Rescreen in 6–12 months.';A.push('Optimise glucose, BP and lipids to slow progression.')}
+ if(wg===2){level='amber';recall='Ophthalmology review within 3–6 months.';A.push('Refer to ophthalmology (non-urgent) for dilated examination.')}
+ if(wg===3){level='red';recall='Ophthalmology review within weeks.';A.push('Refer promptly to ophthalmology: high risk of progression to proliferative DR.')}
+ if(wg===4){level='red';recall='Ophthalmology review within 1 month, sooner if vision is reduced or there is vitreous haemorrhage.';A.push('Urgent ophthalmology referral for panretinal photocoagulation or anti-VEGF therapy.')}
+ if(dme){level='red';tag=wg>=0?`${ICDR[wg]} + DMO`:'Macular oedema';A.push('Refer for OCT and assessment for anti-VEGF treatment of macular oedema.');if(wg<4)recall='Ophthalmology review within 1 month.'}
+ if(ung){if(level==='green')level='amber';A.push('Ungradable image: refer for dilated fundus examination by an ophthalmologist.');if(wg<0&&!dme){tag='Ungradable';recall='Dilated examination as soon as practical.'}}
+ return{level,tag,lines:L,actions:A,recall}}
+
+function kidneyCats(v,p){const k=v.kidney||{},s=v.status||{};const eC=egfr(s.creat,p.age,p.sex),eM=nz(k.egfr);const e=eC??eM;
+ const G=e==null?null:GCAT.find(([t])=>e>=t)[1];const u=nz(k.uacr);let A=null,prov=false;
+ if(u!=null)A=u<30?0:(u<=300?1:2);else{const pr=nz((k.dip||{}).protein);if(pr!=null){prov=true;A=pr===0?0:(pr<=2?1:2)}}
+ return{e,eSrc:eC!=null?'calc':'manual',G,A,prov,u}}
+function evalKidney(v,p){const k=v.kidney||{},d=k.dip||{},s=v.status||{},L=[],Ac=[],lv=[];const c=kidneyCats(v,p);
+ if(c.e!=null)L.push([c.e<60?'amber':'green',`eGFR ${c.e} mL/min/1.73m² (${c.G})${c.eSrc==='calc'?', CKD-EPI 2021':''}`]);
+ if(c.u!=null)L.push([['green','amber','red'][c.A],`UACR ${c.u} mg/g (${['A1','A2','A3'][c.A]})`]);
+ const pr=nz(d.protein);if(pr!=null)L.push([pr===0?'green':(pr<=2?'amber':'red'),`Dipstick protein: ${DIP.protein.levels[pr]}`]);
+ let risk=null;if(c.G&&c.A!=null)risk=RISK[c.G][c.A];else if(c.A!=null)risk=['low','mod','high'][c.A];else if(c.G)risk=RISK[c.G][0];
+ if(risk)lv.push({low:'green',mod:'amber',high:'red',vhigh:'red'}[risk]);
+ const gl=nz(d.glucose),ke=nz(d.ketones),bl=nz(d.blood),le=nz(d.leukocytes),ni=nz(d.nitrite);
+ if(gl!=null&&gl>0)L.push(['na',`Glycosuria: ${DIP.glucose.levels[gl]}${s.sglt2?' (expected on SGLT2 inhibitor)':''}`]);
+ if(ke!=null&&ke>0){const sev=ke>=3;lv.push(sev?'red':'amber');L.push([sev?'red':'amber',`Ketonuria: ${DIP.ketones.levels[ke]}`]);
+  Ac.unshift(sev?'Check capillary glucose and blood ketones now and assess for DKA (euglycaemic DKA is possible on an SGLT2 inhibitor).':'Recheck ketones; review intake, intercurrent illness and SGLT2 inhibitor use.')}
+ if((le!=null&&le>0)||(ni!=null&&ni>0)){lv.push('amber');L.push(['amber','Leukocytes or nitrite positive: possible UTI']);Ac.push('Send urine microscopy and culture; repeat albuminuria testing after the infection is treated.')}
+ if(bl!=null&&bl>0){lv.push('amber');L.push(['amber',`Blood: ${DIP.blood.levels[bl]}`]);Ac.push('Repeat for haematuria; investigate if persistent (exclude menstruation, UTI and stones).')}
+ if(!risk&&!lv.length)return{level:'na',tag:'Not assessed',lines:L,actions:[],recall:'',cats:c,risk:null};
+ if(c.prov&&c.A>0)Ac.push('Confirm with laboratory UACR: albuminuria needs 2 of 3 raised samples over 3–6 months.');
+ if(c.prov&&c.A===0)Ac.push('A negative dipstick does not exclude moderately increased albuminuria: send a laboratory UACR.');
+ if(c.A==null)Ac.push('Send a spot urine albumin-to-creatinine ratio (UACR).');
+ if(c.e==null)Ac.push('Check serum creatinine to estimate eGFR.');
+ const ckd=(c.A>=1&&!c.prov)||(c.e!=null&&c.e<60);
+ if(ckd){Ac.push('ACE inhibitor or ARB at the maximum tolerated dose if albuminuria or hypertension (monitor potassium and creatinine).');
+  if(c.e==null||c.e>=20)Ac.push('Add an SGLT2 inhibitor with proven kidney benefit (eGFR ≥20).');
+  if(s.dmtype!=='T1'&&c.A>=1&&!c.prov)Ac.push('If albuminuria persists on RAS blockade in type 2 diabetes, consider finerenone (eGFR ≥25, normal potassium).')}
+ if((c.e!=null&&c.e<30)||(c.A===2&&!c.prov))Ac.push('Refer to nephrology (eGFR <30, UACR >300 mg/g, or rapid decline).');
+ const rec={low:'UACR and eGFR every 12 months.',mod:'UACR and eGFR at least every 12 months.',high:'UACR and eGFR twice a year.',vhigh:'UACR and eGFR 3–4 times a year.'};
+ const level=worst(lv);
+ const tag=risk?`${c.G||'G?'} ${c.A!=null?['A1','A2','A3'][c.A]:'A?'}${c.prov?'*':''}`:'Urine flags';
+ return{level,tag,lines:L,actions:[...new Set(Ac)],recall:risk?rec[risk]:'',cats:c,risk}}
+
+function footFlags(v){const f=v.foot||{},it=f.itt||{};const notFelt=SITES.filter(([k])=>it[k]==='not').length,tested=SITES.filter(([k])=>it[k]).length;
+ const abi=nz(f.abi);const lops=f.mono==='reduced'||notFelt>=2||f.vib==='absent';
+ const pad=f.pulsesR==='absent'||f.pulsesL==='absent'||(abi!=null&&(abi<0.9||abi>1.3));
+ const assessed=tested>0||!!f.mono||!!f.vib||!!f.pulsesR||!!f.pulsesL||abi!=null;return{f,notFelt,tested,lops,pad,abi,assessed}}
+function woundArea(f){const w=f.wound||{};const c=w.cal||[],p=w.poly||[];const L=nz(w.calLen)||2;if(c.length<2||p.length<3)return null;
+ const ppc=Math.hypot(c[0].x-c[1].x,c[0].y-c[1].y)/L;if(ppc<=0)return null;let s=0;
+ for(let i=0;i<p.length;i++){const a=p[i],b=p[(i+1)%p.length];s+=a.x*b.y-b.x*a.y}return Math.round(Math.abs(s)/2/(ppc*ppc)*100)/100}
+function evalFoot(v){const {f,notFelt,tested,lops,pad,abi,assessed}=footFlags(v);const u=f.ulcer||{},L=[],A=[];
+ if(!assessed&&u.present!=='yes')return{level:'na',tag:'Not assessed',lines:[],actions:[],recall:'',risk:null,ul:null};
+ if(tested)L.push([notFelt>=2?'red':'green',`Ipswich Touch Test: ${notFelt} of ${tested} sites not felt`]);
+ if(f.mono)L.push([f.mono==='reduced'?'red':'green',`10 g monofilament: ${f.mono==='reduced'?'reduced sensation':'normal'}`]);
+ if(f.vib)L.push([f.vib==='absent'?'amber':'green',`128 Hz vibration: ${f.vib}`]);
+ if(f.pulsesR||f.pulsesL)L.push([(f.pulsesR==='absent'||f.pulsesL==='absent')?'amber':'green',`Pedal pulses: right ${f.pulsesR||'not checked'}, left ${f.pulsesL||'not checked'}`]);
+ if(abi!=null)L.push([(abi<0.9||abi>1.3)?'amber':'green',`ABI ${abi}${abi<0.9?' (peripheral artery disease)':abi>1.3?' (non-compressible: check toe pressures)':''}`]);
+ const ex=[];if(f.deformity)ex.push('foot deformity');if(f.callus)ex.push('callus');if(f.hxulcer)ex.push('previous ulcer');if(f.amputation)ex.push('previous amputation');if(f.esrd)ex.push('end-stage renal disease');
+ if(ex.length)L.push(['amber','Risk factors: '+ex.join(', ')]);
+ let risk=0;if(lops||pad){risk=1;if((lops&&pad)||f.deformity)risk=2;if(f.hxulcer||f.amputation||f.esrd)risk=3}
+ L.unshift([['green','amber','amber','red'][risk],`Loss of protective sensation: ${lops?'yes':'no'}. Peripheral artery disease: ${pad?'yes':'no'}`]);
+ let level=['green','amber','amber','red'][risk],tag=['IWGDF 0: very low','IWGDF 1: low','IWGDF 2: moderate','IWGDF 3: high'][risk];
+ let recall=['Annual foot screening.','Foot review every 6–12 months.','Foot review every 3–6 months.','Foot review every 1–3 months.'][risk];
+ if(risk>=1)A.push('Foot-care education, daily self-inspection, and no barefoot walking.');
+ if(risk>=2||f.callus)A.push('Therapeutic footwear with pressure-relieving insoles; podiatry for callus and nail care.');
+ if(pad)A.push('Vascular assessment (ABI, toe pressures or TBI, Doppler waveforms); refer to vascular surgery if ischaemia is significant.');
+ let ul=null;
+ if(u.present==='yes'){const area=nz(u.area),deep=u.depth==='tendon'||u.depth==='bone',inf=u.infection||'none';
+  let wag=1;if(u.gangrene==='extensive')wag=5;else if(u.gangrene==='localised')wag=4;else if(u.depth==='bone'||(deep&&(inf==='moderate'||inf==='severe')))wag=3;else if(deep)wag=2;
+  const sb={site:u.site==='midhind'?1:0,isch:pad?1:0,neuro:lops?1:0,bact:inf!=='none'?1:0,area:(area!=null&&area>=1)?1:0,depth:deep?1:0};
+  const sin=Object.values(sb).reduce((a,b)=>a+b,0);ul={wag,sin,area,inf};
+  level='red';tag=`Active ulcer, Wagner ${wag}`;
+  L.unshift(['red',`Active ulcer: Wagner grade ${wag}, SINBAD ${sin}/6${area!=null?`, area ${area} cm²`:''}, infection ${inf==='none'?'absent':inf}`]);
+  if(inf==='severe'||u.gangrene==='extensive')A.unshift('Emergency: same-day hospital admission for severe infection or extensive gangrene; IV antibiotics after deep tissue cultures.');
+  else A.unshift('Refer urgently to a multidisciplinary diabetic foot team (within 1 working day).');
+  A.push('Offload the ulcer: a non-removable knee-high device (total contact cast) is first choice for plantar forefoot ulcers.');
+  A.push('Sharp debridement, moist dressings, and check tetanus status.');
+  if(inf==='mild'||inf==='moderate')A.push('Take deep tissue cultures (not swabs) and start empirical antibiotics by IWGDF/IDSA severity.');
+  if(deep)A.push('Probe-to-bone test and plain X-ray; MRI if osteomyelitis is suspected.');
+  if(sin>=3)A.push('SINBAD 3 or more: higher risk of delayed healing; keep under specialist care.');
+  recall='Weekly wound review until healed, then IWGDF 3 surveillance every 1–3 months.'}
+ return{level,tag,lines:L,actions:[...new Set(A)],recall,risk,ul,lops,pad}}
+
+function evalNerve(v){const c=v.ccm||{},sy=c.sym||{},L=[],A=[],lv=[];const ff=footFlags(v);
+ const syms=SYM.slice(0,4).filter(([k])=>sy[k]);const cnfl=nz(c.cnfl),cnfd=nz(c.cnfd),cnbd=nz(c.cnbd);let ccm=null;
+ if(cnfl!=null){ccm=cnfl<12.5?'reduced':(cnfl<16.5?'borderline':'normal');const l=ccm==='normal'?'green':'amber';lv.push(l);
+  L.push([l,`CNFL ${cnfl} mm/mm²: ${ccm==='reduced'?'reduced, small-fibre neuropathy likely':ccm==='borderline'?'borderline':'within indicative range'}`])}
+ if(cnfd!=null)L.push(['na',`CNFD ${cnfd} fibres/mm²`]);if(cnbd!=null)L.push(['na',`CNBD ${cnbd} branches/mm²`]);
+ if(syms.length){lv.push('amber');L.push(['amber','Neuropathic symptoms: '+syms.map(x=>x[1].toLowerCase()).join(', ')])}
+ if(sy.auto){lv.push('amber');L.push(['amber','Possible autonomic symptoms']);A.push('Screen for autonomic neuropathy: orthostatic BP, resting heart rate, gastroparesis and bladder symptoms.')}
+ if(ff.assessed){const l=ff.lops?'amber':'green';lv.push(l);L.push([l,`Large-fibre tests (foot module): ${ff.lops?'loss of protective sensation':'protective sensation intact'}`])}
+ const level=worst(lv);if(level==='na')return{level,tag:'Not assessed',lines:[],actions:[],recall:''};
+ const neuro=ccm==='reduced'||ff.lops||syms.length>0;
+ const tag=level==='green'?'No neuropathy found':(ff.lops?'Clinical neuropathy':(ccm==='reduced'?'Small-fibre loss':'Possible neuropathy'));
+ if(neuro){A.unshift('Optimise glycaemia, BP, lipids, weight and tobacco use to slow progression.');A.push('Exclude other causes if atypical: vitamin B12 (especially on metformin), thyroid function, alcohol, renal failure.')}
+ if(sy.burn||sy.night)A.push('Painful neuropathy: consider pregabalin, duloxetine or gabapentin (start low, review in 4–6 weeks); tricyclics or topical capsaicin as alternatives.');
+ if(ccm==='borderline')A.push('Borderline CCM: repeat in 12 months to track change.');
+ return{level,tag,lines:L,actions:[...new Set(A)],recall:'Neuropathy screening every 12 months.'}}
+
+const MODS=[
+ {k:'status',name:'Diabetic status',short:'Glycaemia',desc:'Glycaemia, BP, BMI, lipids, creatinine',ev:evalStatus},
+ {k:'retina',name:'Retina',short:'Eye',desc:'Fundus photos and ICDR grading for both eyes',ev:evalRetina},
+ {k:'kidney',name:'Kidney',short:'Kidney',desc:'Dipstick colour reading, UACR, eGFR and KDIGO risk',ev:evalKidney},
+ {k:'foot',name:'Diabetic foot',short:'Foot',desc:'Sensation, pulses, IWGDF risk and wound measurement',ev:evalFoot},
+ {k:'nerve',name:'Neuropathy and CCM',short:'Nerve',desc:'Symptoms and corneal confocal nerve metrics',ev:evalNerve}];
+
+/* ---------- images ---------- */
+function loadImg(src){return new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=src})}
+function readScaled(file,max){return new Promise((res,rej)=>{const r=new FileReader();r.onerror=rej;r.onload=async()=>{try{const img=await loadImg(r.result);const s=Math.min(1,max/Math.max(img.width,img.height));const c=document.createElement('canvas');c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext('2d').drawImage(img,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',0.8))}catch(e){rej(e)}};r.readAsDataURL(file)})}
+async function quality(src){const img=await loadImg(src);const s=256/Math.max(img.width,img.height);const w=Math.max(8,Math.round(img.width*s)),h=Math.max(8,Math.round(img.height*s));
+ const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.drawImage(img,0,0,w,h);const d=x.getImageData(0,0,w,h).data;const g=new Float32Array(w*h);let sum=0;
+ for(let i=0;i<w*h;i++){const val=0.299*d[i*4]+0.587*d[i*4+1]+0.114*d[i*4+2];g[i]=val;sum+=val}const mean=sum/(w*h);let sq=0;for(let i=0;i<w*h;i++)sq+=(g[i]-mean)**2;
+ let ls=0,lq=0,n=0;for(let y=1;y<h-1;y++)for(let xx=1;xx<w-1;xx++){const i=y*w+xx;const L=g[i-w]+g[i+w]+g[i-1]+g[i+1]-4*g[i];ls+=L;lq+=L*L;n++}
+ return{sharp:Math.round(lq/n-(ls/n)**2),bright:Math.round(mean),contrast:Math.round(Math.sqrt(sq/(w*h)))}}
+async function handleFile(key,file){if(!file)return;try{const src=await readScaled(file,1000);const q=await quality(src);const v=V();v.images[key]={src,q,t:Date.now()};
+ if(key==='dip'){v.kidney.dipPts={};v.kidney.dipM={};dipTarget='white'}if(key==='wound'){v.foot.wound={cal:[],poly:[],calLen:v.foot.wound.calLen||2};woundMode='cal'}
+ save();render()}catch(e){toast('This image could not be read. Try a JPEG or PNG photo.')}}
+function qBadges(q){if(!q)return'';const s=q.sharp<25?['red','Blurred: retake']:q.sharp<70?['amber','Sharpness fair']:['green','Sharp'];
+ const b=q.bright<45?['red','Too dark']:q.bright>215?['red','Overexposed']:['green','Exposure OK'];const c=q.contrast<18?['amber','Low contrast']:['green','Contrast OK'];
+ return `<div class="qual">${[s,b,c].map(([l,t])=>`<span class="pill ${l}">${t}</span>`).join('')}<span class="sub">Automatic check; confirm by eye</span></div>`}
+function imgBlock(key,label,tool=''){const im=V().images[key];
+ return `<div class="imgblk"><div class="imgbtns"><label class="btn sec sm"><input type="file" accept="image/*" capture="environment" data-imgin="${key}" class="vh">${I.cam} Take photo</label><label class="btn ghost sm"><input type="file" accept="image/*" data-imgin="${key}" class="vh">Upload</label>${im?`<button type="button" class="btn ghost sm" data-imgdel="${key}">Remove</button>`:''}</div>
+ ${im?(tool||`<img class="preview" src="${im.src}" alt="${esc(label)}">`)+qBadges(im.q):`<p class="hint">${esc(label)}</p>`}</div>`}
+
+/* colour science for dipstick */
+function hexRgb(h){const n=parseInt(h.slice(1),16);return[n>>16&255,n>>8&255,n&255]}
+function toLab([r,g,b]){const f=c=>{c/=255;return c>0.04045?Math.pow((c+0.055)/1.055,2.4):c/12.92};const R=f(r),G=f(g),B=f(b);
+ const q=t=>t>0.008856?Math.cbrt(t):(7.787*t+16/116);const X=q((R*0.4124+G*0.3576+B*0.1805)/0.95047),Y=q(R*0.2126+G*0.7152+B*0.0722),Z=q((R*0.0193+G*0.1192+B*0.9505)/1.08883);
+ return[116*Y-16,500*(X-Y),200*(Y-Z)]}
+const dE=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1],a[2]-b[2]);
+function sample(ctx,cx,cy,r){const W=ctx.canvas.width,H=ctx.canvas.height;const x0=Math.max(0,Math.round(cx-r)),y0=Math.max(0,Math.round(cy-r));const w=Math.max(1,Math.min(r*2+1,W-x0)),h=Math.max(1,Math.min(r*2+1,H-y0));
+ const d=ctx.getImageData(x0,y0,w,h).data;let R=0,G=0,B=0,n=0;for(let i=0;i<d.length;i+=4){R+=d[i];G+=d[i+1];B+=d[i+2];n++}return[R/n,G/n,B/n]}
+function recomputeDip(v){const k=v.kidney,pts=k.dipPts||{};const w=pts.white&&pts.white.rgb;
+ for(const a of ANALYTES){const pt=pts[a];if(!pt)continue;let c=pt.rgb.slice();if(w)c=c.map((ch,i)=>Math.min(255,ch*255/Math.max(1,w[i])));
+  const lab=toLab(c);let best=0,bd=1e9;DIP[a].colors.forEach((hex,i)=>{const d=dE(lab,toLab(hexRgb(hex)));if(d<bd){bd=d;best=i}});
+  k.dip[a]=String(best);k.dipM[a]={de:Math.round(bd),wb:!!w}}}
+function dipTool(){const pts=V().kidney.dipPts||{};const T=[['white','White card'],...ANALYTES.map(a=>[a,DIP[a].name])];
+ return `<div class="tool"><p class="sub">Pick a target, then tap the centre of that pad on the photo. Tap the white card first so colours are corrected for lighting.</p><div class="chips">${T.map(([t,l])=>`<label class="chip"><input type="radio" name="dipt" value="${t}" ${dipTarget===t?'checked':''} data-act-r="dipt"><span>${l}${pts[t]?' ✓':''}</span></label>`).join('')}</div><canvas id="dipCanvas" role="img" aria-label="Dipstick photo. Tap a pad to read its colour."></canvas></div>`}
+async function initDip(){const cv=$('#dipCanvas');if(!cv)return;const v=V();let img;try{img=await loadImg(v.images.dip.src)}catch(e){return}
+ cv.width=img.width;cv.height=img.height;const x=cv.getContext('2d',{willReadFrequently:true});
+ const draw=()=>{x.drawImage(img,0,0);const r=Math.max(6,img.width*0.012),lw=Math.max(2,img.width/320);x.lineWidth=lw;x.font=`bold ${Math.round(r*1.5)}px sans-serif`;
+  for(const [t,pt] of Object.entries(v.kidney.dipPts||{})){x.strokeStyle='#000';x.beginPath();x.arc(pt.x,pt.y,r+lw,0,7);x.stroke();x.strokeStyle=t==='white'?'#19C3D0':'#fff';x.beginPath();x.arc(pt.x,pt.y,r,0,7);x.stroke();
+   const lab=t==='white'?'W':DIP[t].name.slice(0,3);x.lineWidth=lw*2;x.strokeStyle='#000';x.strokeText(lab,pt.x+r*1.5,pt.y+r*.5);x.fillStyle='#fff';x.fillText(lab,pt.x+r*1.5,pt.y+r*.5);x.lineWidth=lw}};
+ draw();
+ cv.onclick=e=>{const rc=cv.getBoundingClientRect();const px=(e.clientX-rc.left)*cv.width/rc.width,py=(e.clientY-rc.top)*cv.height/rc.height;
+  x.drawImage(img,0,0);const rgb=sample(x,px,py,Math.max(3,Math.round(img.width*0.008)));v.kidney.dipPts[dipTarget]={x:px,y:py,rgb};recomputeDip(v);
+  const order=['white',...ANALYTES];const i=order.indexOf(dipTarget);if(i<order.length-1)dipTarget=order[i+1];save();render()}}
+
+function syncArea(v){const a=woundArea(v.foot);if(a!=null)v.foot.ulcer.area=a}
+function woundTool(){const f=V().foot,w=f.wound||{};const a=woundArea(f);
+ return `<div class="tool"><div class="chips"><label class="chip"><input type="radio" name="wm" value="cal" ${woundMode==='cal'?'checked':''} data-act-r="wm"><span>Step 1: mark size reference</span></label><label class="chip"><input type="radio" name="wm" value="trace" ${woundMode==='trace'?'checked':''} data-act-r="wm"><span>Step 2: trace wound edge</span></label></div>
+ <p class="sub">${woundMode==='cal'?'Tap both ends of the reference marker (ruler or size sticker) placed beside the wound.':'Tap points around the wound edge. The outline closes automatically.'}</p>
+ <canvas id="woundCanvas" role="img" aria-label="Wound photo for measurement"></canvas>
+ <div class="toolrow"><label class="field mini"><span class="lab">Reference length</span><span class="inp"><input type="number" step="any" min="0.1" inputmode="decimal" data-b="foot.wound.calLen" data-rr="1"><em>cm</em></span></label><button type="button" class="btn ghost sm" data-act="wundo">Undo point</button><button type="button" class="btn ghost sm" data-act="wclear">Clear step</button></div>
+ <p class="measure">${a!=null?`Measured area: <b>${a} cm²</b>`:((w.cal||[]).length<2?'Mark the reference to enable measurement.':'Trace at least 3 points around the wound.')}</p></div>`}
+async function initWound(){const cv=$('#woundCanvas');if(!cv)return;const v=V();let img;try{img=await loadImg(v.images.wound.src)}catch(e){return}
+ cv.width=img.width;cv.height=img.height;const x=cv.getContext('2d');const w=v.foot.wound;const lw=Math.max(2,img.width/300),r=Math.max(4,img.width/140);
+ x.drawImage(img,0,0);
+ if(w.poly.length){x.beginPath();w.poly.forEach((p,i)=>i?x.lineTo(p.x,p.y):x.moveTo(p.x,p.y));if(w.poly.length>2){x.closePath();x.fillStyle='rgba(207,74,67,.32)';x.fill()}x.lineWidth=lw;x.strokeStyle='#FF5A50';x.stroke();
+  w.poly.forEach(p=>{x.beginPath();x.arc(p.x,p.y,r,0,7);x.fillStyle='#fff';x.fill();x.lineWidth=lw/1.5;x.strokeStyle='#000';x.stroke()})}
+ if(w.cal.length){x.lineWidth=lw;x.strokeStyle='#19C3D0';if(w.cal.length===2){x.beginPath();x.moveTo(w.cal[0].x,w.cal[0].y);x.lineTo(w.cal[1].x,w.cal[1].y);x.stroke()}
+  w.cal.forEach(p=>{x.beginPath();x.arc(p.x,p.y,r*1.2,0,7);x.fillStyle='#19C3D0';x.fill();x.strokeStyle='#000';x.lineWidth=lw/1.5;x.stroke()})}
+ cv.onclick=e=>{const rc=cv.getBoundingClientRect();const pt={x:(e.clientX-rc.left)*cv.width/rc.width,y:(e.clientY-rc.top)*cv.height/rc.height};
+  if(woundMode==='cal'){if(w.cal.length>=2)w.cal=[];w.cal.push(pt);if(w.cal.length===2){woundMode='trace';toast('Reference marked. Now trace the wound edge.')}}else w.poly.push(pt);
+  syncArea(v);save();render()}}
+
+/* ---------- UI pieces ---------- */
+function bar(t,back,right=''){return `<header class="bar">${back?`<button class="icon-btn" data-go="${back}" aria-label="Back">${I.back}</button>`:`<span class="mark">${LOGO}</span>`}<h1>${esc(t)}</h1>${right}</header>`}
+function chips(path,opts){return `<div class="chips" role="radiogroup">${opts.map(([v,l])=>`<label class="chip"><input type="radio" name="${path}" value="${v}" data-b="${path}"><span>${l}</span></label>`).join('')}</div>`}
+function num(path,label,unit,extra=''){return `<label class="field"><span class="lab">${label}</span><span class="inp"><input type="number" inputmode="decimal" step="any" min="0" data-b="${path}" ${extra}>${unit?`<em>${unit}</em>`:''}</span></label>`}
+function strip(v,p){return `<div class="strip" role="list" aria-label="Complication status by organ">${MODS.map(m=>{const e=m.ev(v,p);return `<button class="seg ${e.level}" role="listitem" data-go="${m.k}" ${v.consent?'':'disabled'} aria-label="${m.short}: ${esc(e.tag)}"><i></i><b>${m.short}</b><small>${esc(e.tag)}</small></button>`}).join('')}</div>`}
+function dots(v,p){return `<span class="dots" aria-hidden="true">${MODS.map(m=>`<i class="${m.ev(v,p).level}"></i>`).join('')}</span>`}
+function kdigoTable(e){if(!e.cats)return'';const c=e.cats;const cls={low:'green',mod:'amber',high:'orange',vhigh:'red'};
+ return `<h4>KDIGO risk grid</h4><table class="kd" aria-label="KDIGO CKD risk grid by eGFR and albuminuria category"><thead><tr><th></th><th>A1<br><small>&lt;30</small></th><th>A2<br><small>30–300</small></th><th>A3<br><small>&gt;300</small></th></tr></thead><tbody>${Object.keys(RISK).map(g=>`<tr><th>${g}</th>${RISK[g].map((r,i)=>{const cur=c.G===g&&c.A===i;return `<td class="${cls[r]} ${cur?'cur':''}" ${cur?'aria-label="This patient"':''}>${cur?'●':''}</td>`}).join('')}</tr>`).join('')}</tbody></table>${c.prov?'<p class="sub" style="margin-top:8px">* Albuminuria category estimated from dipstick; confirm with UACR.</p>':''}`}
+function panel(e,m,title){return `<div class="livehead">${title?`<h3>${esc(title)}</h3>`:'<span class="lab">Result</span>'}<span class="pill ${e.level}">${esc(e.tag)}</span></div>
+ ${e.lines.length?`<ul class="lines">${e.lines.map(([l,t])=>`<li class="${l}">${esc(t)}</li>`).join('')}</ul>`:`<p class="sub">${title?'Not assessed at this visit.':'Enter findings to see the result.'}</p>`}
+ ${e.actions.length?`<h4>Suggested actions</h4><ul class="acts">${e.actions.map(a=>`<li>${esc(a)}</li>`).join('')}</ul>`:''}
+ ${e.recall?`<p class="recall"><b>Next screen:</b> ${esc(e.recall)}</p>`:''}${m.k==='kidney'&&e.risk&&e.cats.G&&e.cats.A!=null?kdigoTable(e):''}`}
+function modView(title,body,k){const m=MODS.find(x=>x.k===k);const e=m.ev(V(),P());
+ return bar(title,'hub')+`<main>${body}<section class="card live ${e.level}" id="live" aria-live="polite">${panel(e,m)}</section><button class="btn pri block" data-go="hub">Done</button></main>`}
+function updateLive(){const el=$('#live');if(!el)return;const m=MODS.find(x=>x.k===route.v);if(!m)return;const e=m.ev(V(),P());el.className='card live '+e.level;el.innerHTML=panel(e,m)}
+
+const REFS=['ADA Standards of Care in Diabetes (current edition): glycaemic targets, CKD, retinopathy, neuropathy and foot care','ICO Guidelines for Diabetic Eye Care and the International Clinical Diabetic Retinopathy (ICDR) severity scale','KDIGO 2022 Diabetes Management in CKD and KDIGO 2024 CKD guideline; CKD-EPI 2021 creatinine equation','IWGDF 2023 guidelines: risk stratification, offloading, PAD, and infection (with IDSA); Wagner and SINBAD classifications','RSSDI clinical practice recommendations; WHO Asia-Pacific BMI cut-offs','Ipswich Touch Test (Rayman et al., 2011); automated CCM thresholds (Perkins et al., 2018)'];
+
+/* ---------- views ---------- */
+const VIEWS={
+login:()=>`<main class="login"><div class="brand">${LOGO}<div><p class="wordmark">DiaScreen</p><p class="sub" style="margin:4px 0 0">Diabetic complication screening for clinicians</p></div></div>
+ <form class="card" id="loginForm" novalidate><h2>Sign in</h2>
+ <label class="field"><span class="lab">Username</span><span class="inp"><input id="lu" autocomplete="username" autocapitalize="none" spellcheck="false" required></span></label>
+ <label class="field"><span class="lab">Password</span><span class="inp"><input id="lp" type="password" autocomplete="current-password" required></span></label>
+ <p class="err" id="lerr" role="alert">${esc(route.msg||'')}</p>
+ <button class="btn pri block" type="submit">Sign in</button>
+ <p class="sub demo">Shared demo login: <b>clinician</b> / <b>screen2026</b></p></form>
+ <p class="fine">Prototype for evaluation only. Not a certified medical device; every result needs clinical confirmation. Patient data is stored only in this browser on this device, and you are signed out after 15 minutes of inactivity.</p><p class="fine"><a href="../">&larr; Back to the DiaScreen site</a></p></main>`,
+
+home:()=>{const q=(route.q||'').toLowerCase().trim();const last=p=>new Date(p.visits[p.visits.length-1].date).getTime();
+ const list=DB.patients.filter(p=>!q||p.name.toLowerCase().includes(q)||(p.mrn||'').toLowerCase().includes(q)).sort((a,b)=>last(b)-last(a));
+ return bar('DiaScreen',null,`<button class="icon-btn" data-go="about" aria-label="About, data and guidelines">${I.info}</button><button class="icon-btn" data-act="logout" aria-label="Sign out">${I.out}</button>`)+`<main>
+ <div class="homehead"><div><h2>Patients</h2><p class="sub">Signed in as clinician (demo)</p></div><button class="btn pri" data-go="newpatient">New patient</button></div>
+ ${DB.patients.length?`<label class="field"><span class="vh">Search patients</span><span class="inp"><input id="search" type="search" placeholder="Search by name or patient ID" value="${esc(route.q||'')}" autocomplete="off"></span></label>`:''}
+ ${list.length?list.map(p=>{const v=p.visits[p.visits.length-1];ensureV(v);return `<button class="row" data-open="${p.id}"><div class="rowmain"><b>${esc(p.name)}</b><span class="sub">${esc(p.age)} y, ${p.sex==='female'?'F':'M'}${p.mrn?', ID '+esc(p.mrn):''}. Last visit ${fmtD(v.date)}</span></div>${dots(v,p)}</button>`}).join('')
+  :DB.patients.length?`<p class="sub">No patients match “${esc(route.q)}”.</p>`:`<div class="empty card"><h3>No patients yet</h3><p class="sub">Add a patient to start a screening visit. Records stay in this browser only.</p><button class="btn sec" data-go="newpatient">Add first patient</button></div>`}
+ </main>`},
+
+newpatient:()=>{const p=route.pid?P():{};return bar(route.pid?'Edit patient':'New patient',route.pid?'hub':'home')+`<main><form class="card" id="pform" novalidate>
+ <label class="field"><span class="lab">Full name</span><span class="inp"><input name="name" required autocomplete="off" value="${esc(p.name||'')}"></span></label>
+ <div class="grid2"><label class="field"><span class="lab">Age</span><span class="inp"><input name="age" type="number" inputmode="numeric" min="1" max="120" required value="${esc(p.age||'')}"><em>years</em></span></label>
+ <label class="field"><span class="lab">Patient ID (optional)</span><span class="inp"><input name="mrn" autocomplete="off" value="${esc(p.mrn||'')}"></span></label></div>
+ <span class="lab">Sex (used in the eGFR equation)</span><div class="chips">${[['male','Male'],['female','Female']].map(([v,l])=>`<label class="chip"><input type="radio" name="sex" value="${v}" ${p.sex===v?'checked':''}><span>${l}</span></label>`).join('')}</div>
+ <p class="err" id="perr" role="alert"></p>
+ <button class="btn pri block" type="submit">${route.pid?'Save changes':'Create patient and start visit'}</button></form></main>`},
+
+hub:()=>{const p=P(),v=V();if(!p||!v){route={v:'home'};return VIEWS.home()}const ok=!!v.consent;
+ return bar(p.name,'home',`<button class="icon-btn" data-act="logout" aria-label="Sign out">${I.out}</button>`)+`<main>
+ <section class="card"><div class="pthead"><div><h2>${esc(p.name)}</h2><p class="sub">${esc(p.age)} years, ${p.sex}${p.mrn?', ID '+esc(p.mrn):''}</p></div><button class="btn ghost sm" data-go="newpatient">Edit</button></div>
+ <div class="visitsel"><label class="field"><span class="lab">Visit</span><span class="inp"><select id="visitSel">${p.visits.map(x=>`<option value="${x.id}" ${x.id===v.id?'selected':''}>${fmtD(x.date)}</option>`).join('')}</select></span></label><button class="btn sec" data-act="newvisit">New visit</button></div>
+ ${strip(v,p)}</section>
+ <section class="card consent ${ok?'ok':''}"><label class="check"><input type="checkbox" data-b="consent"><span><b>Consent recorded</b><br><span class="sub">The patient was told about the screening, image capture and on-device storage, and agrees to proceed.</span></span></label></section>
+ <p class="sect">Screening modules</p>
+ ${MODS.map(m=>{const e=m.ev(v,p);return `<button class="row" data-go="${m.k}" ${ok?'':'disabled'}><div class="rowmain"><b>${m.name}</b><span class="sub">${m.desc}</span></div><span class="pill ${e.level}">${esc(e.tag)}</span></button>`}).join('')}
+ ${ok?'':'<p class="sub">Record consent to open the modules.</p>'}
+ <button class="btn pri block" style="margin-top:8px" data-go="report" ${ok?'':'disabled'}>View screening report</button>
+ <div class="dz"><button class="btn danger sm" data-act="delvisit">Delete this visit</button><button class="btn danger sm" data-act="delpatient">Delete patient</button></div></main>`},
+
+status:()=>modView('Diabetic status',`<section class="card"><h2>Diabetes</h2>
+ <span class="lab">Type</span>${chips('status.dmtype',[['T1','Type 1'],['T2','Type 2'],['other','Other']])}
+ <div class="grid2">${num('status.duration','Duration','years')}${num('status.hba1c','HbA1c','%')}${num('status.fpg','Fasting glucose','mg/dL')}${num('status.ppg','Post-meal glucose','mg/dL')}</div>
+ <label class="check"><input type="checkbox" data-b="status.insulin"><span>On insulin</span></label>
+ <label class="check"><input type="checkbox" data-b="status.sglt2"><span>On an SGLT2 inhibitor</span></label></section>
+ <section class="card"><h2>Cardiometabolic and renal</h2><div class="grid2">${num('status.sbp','Systolic BP','mmHg')}${num('status.dbp','Diastolic BP','mmHg')}${num('status.weight','Weight','kg')}${num('status.height','Height','cm')}${num('status.ldl','LDL cholesterol','mg/dL')}${num('status.creat','Serum creatinine','mg/dL')}</div>
+ <span class="lab">Current tobacco use</span>${chips('status.smoker',[['no','No'],['yes','Yes']])}</section>`,'status'),
+
+retina:()=>{const r=V().retina;return modView('Retina',`<section class="card note"><p class="sub"><b>AI grading slot.</b> This prototype uses structured clinician grading with lesion-based suggestions (4-2-1 rule for severe NPDR). A validated DR model trained on datasets such as EyePACS, APTOS 2019, Messidor-2 or IDRiD plugs in here. Capture one macula-centred 45° field per eye, dilated where possible.</p></section>
+ ${['R','L'].map(k=>{const e=r[k];const sg=suggest(e);return `<section class="card"><h2>${k==='R'?'Right eye':'Left eye'}</h2>${imgBlock('fundus_'+k,'Fundus photo, macula-centred')}
+ <span class="lab">Image quality</span>${chips(`retina.${k}.gradable`,[['yes','Gradable'],['no','Ungradable']])}
+ ${e.gradable==='yes'?`<span class="lab">Lesions seen</span><div class="checks">${LES.map(([c,t])=>`<label class="check"><input type="checkbox" data-b="retina.${k}.les.${c}"><span>${t}</span></label>`).join('')}</div>
+ <div class="suggest"><span>Suggested: <b>${ICDR[sg]}</b>${(e.les||{}).mac?', macular oedema likely':''}</span><button type="button" class="btn sec sm" data-act="apply:${k}">Apply</button></div>
+ <span class="lab">ICDR grade (clinician)</span>${chips(`retina.${k}.grade`,ICDR.map((t,i)=>[String(i),t]))}
+ <span class="lab">Diabetic macular oedema</span>${chips(`retina.${k}.dme`,[['no','Absent'],['yes','Present']])}`:''}</section>`}).join('')}`,'retina')},
+
+kidney:()=>{const v=V(),k=v.kidney,c=kidneyCats(v,P());const im=v.images.dip;
+ return modView('Kidney',`<section class="card"><h2>Urine dipstick</h2><p class="sub">Read pads at the times on the strip pack. Photograph the strip on a plain white card in even daylight, without flash, camera held parallel.</p>
+ ${imgBlock('dip','Dipstick photographed on a white card',im?dipTool():'')}
+ ${ANALYTES.map(a=>`<label class="field"><span class="lab">${DIP[a].name}${k.dipM[a]?` <span class="auto">read from photo${k.dipM[a].wb?'':', uncorrected'}, colour distance ${k.dipM[a].de}</span>`:''}</span><span class="inp"><select data-b="kidney.dip.${a}"><option value="">Not read</option>${DIP[a].levels.map((l,i)=>`<option value="${i}">${l}</option>`).join('')}</select></span></label>`).join('')}
+ <p class="fine">Photo reading uses approximate reference colours. Calibrate against the strip manufacturer’s chart before clinical use, and check each suggested value by eye.</p></section>
+ <section class="card"><h2>Laboratory</h2><div class="grid2">${num('kidney.uacr','Urine albumin-creatinine ratio','mg/g')}${c.eSrc==='calc'&&c.e!=null?`<div class="field"><span class="lab">eGFR from creatinine</span><div class="calc">${c.e} <em>mL/min/1.73m²</em></div></div>`:num('kidney.egfr','eGFR','mL/min/1.73m²')}</div>
+ <p class="sub">Enter serum creatinine in Diabetic status to calculate eGFR (CKD-EPI 2021). UACR 3 mg/mmol is about 30 mg/g.</p></section>`,'kidney')},
+
+foot:()=>{const v=V(),f=v.foot,u=f.ulcer;return modView('Diabetic foot',`<section class="card"><h2>Ipswich Touch Test</h2><p class="sub">With the patient’s eyes closed, lightly rest your index finger on each toe tip for 1–2 seconds. Tap a site once for felt, twice for not felt, three times to clear.</p>
+ <div class="feet">${['R','L'].map(s=>`<div><span class="lab">${s==='R'?'Right foot':'Left foot'}</span>${SITES.filter(x=>x[0][0]===s).map(([k,l])=>{const st=f.itt[k];return `<button type="button" class="site ${st||''}" data-act="itt:${k}" aria-label="${l}: ${st==='felt'?'felt':st==='not'?'not felt':'not tested'}"><span>${l.replace(/^(Right|Left) /,'')}</span><b>${st==='felt'?'Felt':st==='not'?'Not felt':'–'}</b></button>`}).join('')}</div>`).join('')}</div>
+ <p class="sub" style="margin-top:6px">Two or more insensate sites indicate loss of protective sensation.</p></section>
+ <section class="card"><h2>Sensation and circulation</h2>
+ <span class="lab">10 g monofilament</span>${chips('foot.mono',[['normal','Normal'],['reduced','Reduced']])}
+ <span class="lab">128 Hz tuning fork at the hallux</span>${chips('foot.vib',[['present','Present'],['absent','Absent']])}
+ <span class="lab">Pedal pulses, right (DP and PT)</span>${chips('foot.pulsesR',[['palpable','Both palpable'],['absent','One or both absent']])}
+ <span class="lab">Pedal pulses, left (DP and PT)</span>${chips('foot.pulsesL',[['palpable','Both palpable'],['absent','One or both absent']])}
+ ${num('foot.abi','Lowest ankle-brachial index (optional)','')}
+ <span class="lab">Risk factors</span>${[['deformity','Foot deformity (hammer or claw toes, bunion, Charcot)'],['callus','Callus or pre-ulcerative lesion'],['hxulcer','Previous foot ulcer'],['amputation','Previous amputation, minor or major'],['esrd','End-stage renal disease or dialysis']].map(([c,t])=>`<label class="check"><input type="checkbox" data-b="foot.${c}"><span>${t}</span></label>`).join('')}</section>
+ <section class="card"><h2>Ulcer</h2><span class="lab">Active foot ulcer</span>${chips('foot.ulcer.present',[['no','No'],['yes','Yes']])}
+ ${u.present==='yes'?`${imgBlock('wound','Wound photo: camera parallel to the skin, ruler or size sticker beside the wound',v.images.wound?woundTool():'')}
+ <span class="lab">Site</span>${chips('foot.ulcer.site',[['fore','Forefoot'],['midhind','Midfoot or hindfoot']])}
+ <span class="lab">Depth</span>${chips('foot.ulcer.depth',[['superficial','Superficial'],['tendon','To tendon or capsule'],['bone','To bone or joint']])}
+ <span class="lab">Infection (IWGDF/IDSA)</span>${chips('foot.ulcer.infection',[['none','None'],['mild','Mild'],['moderate','Moderate'],['severe','Severe, systemic signs']])}
+ <span class="lab">Gangrene</span>${chips('foot.ulcer.gangrene',[['none','None'],['localised','Localised (toes or forefoot)'],['extensive','Extensive']])}
+ ${num('foot.ulcer.area','Wound area (measured or manual)','cm²')}`:''}</section>`,'foot')},
+
+nerve:()=>modView('Neuropathy and CCM',`<section class="card"><h2>Symptoms</h2>${SYM.map(([c,t])=>`<label class="check"><input type="checkbox" data-b="ccm.sym.${c}"><span>${t}</span></label>`).join('')}
+ <p class="sub" style="margin-top:8px">Large-fibre tests (monofilament, vibration, touch test) are recorded in Diabetic foot and included here.</p></section>
+ <section class="card"><h2>Corneal confocal microscopy</h2><p class="sub">Upload an image exported from the confocal microscope (for example Heidelberg HRT3 with the Rostock Cornea Module); a phone camera cannot capture this. Enter metrics from ACCMetrics or CCMetrics.</p>
+ ${imgBlock('ccm','CCM image of the sub-basal nerve plexus')}
+ <div class="grid2">${num('ccm.cnfd','CNFD','fibres/mm²')}${num('ccm.cnbd','CNBD','branches/mm²')}${num('ccm.cnfl','CNFL','mm/mm²')}</div>
+ <p class="sub">Indicative cut-offs for automated CNFL (ACCMetrics): below 12.5 mm/mm² suggests neuropathy; 12.5–16.5 is borderline. Replace with your device’s age-matched normative data.</p>
+ <p class="sub"><b>AI slot.</b> Automated nerve tracing from the uploaded image (CNFD, CNBD, CNFL) can be added with a segmentation model.</p></section>`,'nerve'),
+
+report:()=>{const p=P(),v=V();const evs=MODS.map(m=>[m,m.ev(v,p)]);const idx=p.visits.findIndex(x=>x.id===v.id);const prev=idx>0?p.visits[idx-1]:null;
+ const r=v.retina,ek=evs[2][1],ef=evs[3][1],en=evs[4][1];const found=[];
+ if([r.R,r.L].some(e=>nz(e.grade)>=1||e.dme==='yes'))found.push('retinopathy');
+ if(ek.cats&&((ek.cats.A>=1)||(ek.cats.e!=null&&ek.cats.e<60)))found.push(ek.cats.prov&&!(ek.cats.e<60)?'suspected nephropathy':'nephropathy');
+ if(en.level==='amber')found.push('neuropathy');
+ if(ef.risk>=1||ef.ul)found.push(ef.ul?'active foot ulcer':'at-risk foot');
+ const notDone=evs.filter(([m,e])=>e.level==='na').map(([m])=>m.short.toLowerCase());
+ const summary=(found.length?`Findings: ${found.join(', ')}.`:'No complications found in the modules assessed.')+(notDone.length?` Not assessed: ${notDone.join(', ')}.`:'');
+ return bar('Screening report','hub',`<button class="icon-btn" data-act="print" aria-label="Print or save as PDF">${I.print}</button>`)+`<main>
+ <section class="card"><h2>${esc(p.name)}</h2><p class="sub">${esc(p.age)} years, ${p.sex}${p.mrn?', ID '+esc(p.mrn):''}. Visit on ${fmtD(v.date)}. Screened by clinician (demo account).</p>${strip(v,p)}<p class="summary">${esc(summary)}</p></section>
+ ${evs.map(([m,e])=>`<section class="card live ${e.level}">${panel(e,m,m.name)}</section>`).join('')}
+ ${prev?compareRows(prev,v):''}
+ <section class="card"><h3>Basis of recommendations</h3><ul class="refs">${REFS.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
+ <p class="fine" style="margin-top:12px">Prototype decision support. Not a certified medical device. Findings and actions must be confirmed by the treating clinician.</p></section>
+ <button class="btn pri block noprint" data-act="print">Print or save as PDF</button></main>`},
+
+about:()=>bar('About DiaScreen','home')+`<main>
+ <section class="card"><h2>What it does</h2><p class="sub">Screens one patient across five areas in a single visit: glycaemic and cardiometabolic status, retinopathy, nephropathy, diabetic foot, and neuropathy with corneal confocal microscopy. Each module turns findings into a guideline-based status, suggested actions and a rescreening interval.</p></section>
+ <section class="card"><h2>Data and security</h2><ul class="lines">
+ <li class="green">Records and photos are stored only in this browser on this device. Nothing is sent to a server.</li>
+ <li class="green">Sessions end after 15 minutes of inactivity or when the browser tab closes.</li>
+ <li class="green">Consent must be recorded before any module or image capture opens.</li>
+ <li class="green">Photos are downscaled before saving to limit storage.</li>
+ <li class="amber">The shared demo login is not real authentication. A clinical deployment needs individual accounts, encrypted server storage, audit logs, and compliance with the DPDP Act 2023 and ABDM standards.</li></ul>
+ <button class="btn danger block" style="margin-top:12px" data-act="wipe">Delete all data on this device</button></section>
+ <section class="card"><h2>Guidelines used</h2><ul class="refs">${REFS.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></section>
+ <section class="card"><h2>AI model slots and datasets</h2><ul class="refs">
+ <li>Retina: EyePACS, APTOS 2019, Messidor-2, IDRiD, DDR. Reference tools: IDx-DR (LumineticsCore), EyeArt, Medios AI.</li>
+ <li>Foot: DFUC 2020–2022 (detection, infection and ischaemia classification, segmentation).</li>
+ <li>Kidney: smartphone colorimetry as in Healthy.io Minuteful Kidney; the current reader is rule-based colour matching.</li>
+ <li>CCM: CORN-1 and similar corneal nerve sets; ACCMetrics for automated metrics.</li></ul></section>
+ <p class="fine">Prototype for evaluation only. Not a certified medical device (CDSCO SaMD approval would be needed before clinical use).</p><p class="fine"><a href="../">&larr; Back to the DiaScreen site</a></p></main>`
+};
+
+function compareRows(a,b){ensureV(a);const wg=x=>{const g=[x.retina.R,x.retina.L].map(e=>nz(e.grade)).filter(z=>z!=null);return g.length?ICDR[Math.max(...g)]:null};
+ const rows=[['HbA1c (%)',nz(a.status.hba1c),nz(b.status.hba1c)],['Worst DR grade',wg(a),wg(b)],['UACR (mg/g)',nz(a.kidney.uacr),nz(b.kidney.uacr)],['Wound area (cm²)',nz(a.foot.ulcer.area),nz(b.foot.ulcer.area)],['CNFL (mm/mm²)',nz(a.ccm.cnfl),nz(b.ccm.cnfl)]].filter(r=>r[1]!=null||r[2]!=null);
+ if(!rows.length)return'';
+ return `<section class="card"><h3>Change since ${fmtD(a.date)}</h3><table class="cmp"><thead><tr><th>Measure</th><th>Previous</th><th>This visit</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r[0]}</td><td>${esc(r[1]??'–')}</td><td>${esc(r[2]??'–')}</td></tr>`).join('')}</tbody></table></section>`}
+
+/* ---------- render and binding ---------- */
+function bindAll(){const v=V();document.querySelectorAll('[data-b]').forEach(el=>{const val=getP(v,el.dataset.b);
+ if(el.type==='checkbox')el.checked=!!val;else if(el.type==='radio')el.checked=val!=null&&String(val)===el.value;else el.value=val==null?'':val})}
+function render(){const y=window.scrollY;
+ if(!session&&route.v!=='login')route={v:'login'};
+ if(session&&route.v==='login')route={v:'home'};
+ if(['hub','status','retina','kidney','foot','nerve','report'].includes(route.v)){const v=V();if(!v){route={v:'home'}}else{ensureV(v);if(route.v!=='hub'&&!v.consent)route.v='hub'}}
+ if(route.v==='newpatient'&&route.pid&&!P())route={v:'home'};
+ $('#root').innerHTML=(VIEWS[route.v]||VIEWS.home)();
+ after();window.scrollTo(0,y)}
+function after(){if(V())bindAll();
+ const lf=$('#loginForm');if(lf){lf.onsubmit=e=>{e.preventDefault();const u=$('#lu').value.trim(),pw=$('#lp').value;
+  if(u===CREDS.u&&pw===CREDS.p){session={user:u,t:Date.now()};setSession(session);lastAct=Date.now();go('home')}
+  else{$('#lerr').textContent='Username or password is incorrect. Use the demo login below.';$('#lp').value='';$('#lp').focus()}}}
+ const pf=$('#pform');if(pf){pf.onsubmit=e=>{e.preventDefault();const fd=new FormData(pf);const name=String(fd.get('name')||'').trim(),age=Number(fd.get('age')),sex=fd.get('sex'),mrn=String(fd.get('mrn')||'').trim();
+  const miss=[];if(!name)miss.push('the full name');if(!(age>=1&&age<=120))miss.push('an age from 1 to 120');if(!sex)miss.push('sex');
+  if(miss.length){$('#perr').textContent='Enter '+miss.join(', ')+'.';return}
+  if(route.pid){Object.assign(P(),{name,age,sex,mrn});save();go('hub',{pid:route.pid,vid:route.vid});toast('Patient details saved.')}
+  else{const p={id:uid(),name,age,sex,mrn,created:Date.now(),visits:[newVisit()]};DB.patients.push(p);save();go('hub',{pid:p.id,vid:p.visits[0].id})}}}
+ if(route.focusSearch){const s=$('#search');if(s){s.focus();try{s.setSelectionRange(s.value.length,s.value.length)}catch(e){}}route.focusSearch=false}
+ initDip();initWound()}
+function restoreFocus(path,val){const el=[...document.querySelectorAll('[data-b]')].find(x=>x.dataset.b===path&&(x.type!=='radio'||x.value===val));if(el)try{el.focus({preventScroll:true})}catch(e){}}
+
+/* ---------- events ---------- */
+document.addEventListener('click',e=>{const t=e.target.closest('[data-go],[data-act],[data-open],[data-imgdel]');if(!t||t.disabled)return;
+ if(t.dataset.open){const p=DB.patients.find(x=>x.id===t.dataset.open);if(p)go('hub',{pid:p.id,vid:p.visits[p.visits.length-1].id});return}
+ if(t.dataset.imgdel){const v=V(),k=t.dataset.imgdel;delete v.images[k];if(k==='dip'){v.kidney.dipPts={};v.kidney.dipM={}}if(k==='wound')v.foot.wound={cal:[],poly:[],calLen:v.foot.wound.calLen||2};save();render();return}
+ if(t.dataset.go){const g=t.dataset.go;if(g==='newpatient'&&route.v==='home')go('newpatient',{});else if(g==='home'||g==='about')go(g,{});else go(g,{pid:route.pid,vid:route.vid});return}
+ act(t.dataset.act)});
+function act(a){const [n,arg]=a.split(':');const p=P(),v=V();
+ switch(n){
+ case 'logout':logout();break;
+ case 'newvisit':{const nv=newVisit(v);p.visits.push(nv);route.vid=nv.id;save();render();toast('New visit started. Diabetes type, duration, therapy and height were carried forward.');break}
+ case 'delvisit':if(p.visits.length===1){toast('A patient needs at least one visit. Delete the patient instead.');break}
+  ask(`Delete the visit on ${fmtD(v.date)} and its images?`,'Delete visit',()=>{p.visits=p.visits.filter(x=>x.id!==v.id);route.vid=p.visits[p.visits.length-1].id;save();render();toast('Visit deleted.')});break;
+ case 'delpatient':ask(`Delete ${p.name} and all visits from this device?`,'Delete patient',()=>{DB.patients=DB.patients.filter(x=>x.id!==p.id);save();go('home',{});toast('Patient deleted.')});break;
+ case 'apply':{const e=v.retina[arg];e.grade=String(suggest(e));e.dme=(e.les||{}).mac?'yes':'no';save();render();break}
+ case 'itt':{const it=v.foot.itt;const s=it[arg];if(!s)it[arg]='felt';else if(s==='felt')it[arg]='not';else delete it[arg];save();render();break}
+ case 'wundo':{const w=v.foot.wound;(woundMode==='cal'?w.cal:w.poly).pop();syncArea(v);save();render();break}
+ case 'wclear':{const w=v.foot.wound;if(woundMode==='cal')w.cal=[];else w.poly=[];syncArea(v);save();render();break}
+ case 'print':try{window.print()}catch(e){toast('Printing is not available here. Use the browser’s share or print menu.')}break;
+ case 'wipe':ask('Delete all patients, visits and photos stored in this browser?','Delete all',()=>{DB={patients:[]};save();toast('All screening data deleted from this device.');go('home',{})});break;
+ }}
+document.addEventListener('input',e=>{const el=e.target;
+ if(el.id==='search'){route.q=el.value;route.focusSearch=true;render();return}
+ if(el.dataset.b&&el.type==='number'){setP(V(),el.dataset.b,nz(el.value));saveSoon();updateLive()}});
+document.addEventListener('change',e=>{const el=e.target;
+ if(el.dataset.imgin){handleFile(el.dataset.imgin,el.files&&el.files[0]);el.value='';return}
+ if(el.dataset.actR==='dipt'){dipTarget=el.value;return}
+ if(el.dataset.actR==='wm'){woundMode=el.value;render();return}
+ if(el.id==='visitSel'){route.vid=el.value;render();return}
+ if(!el.dataset.b)return;const v=V(),path=el.dataset.b;
+ if(el.type==='checkbox')setP(v,path,el.checked);
+ else if(el.type==='radio'){if(!el.checked)return;setP(v,path,el.value)}
+ else if(el.tagName==='SELECT'){setP(v,path,el.value===''?null:el.value);if(path.startsWith('kidney.dip.'))delete v.kidney.dipM[path.split('.')[2]]}
+ else if(el.type==='number'){setP(v,path,nz(el.value));if(path==='foot.wound.calLen')syncArea(v);save();if(!el.dataset.rr){updateLive();return}}
+ save();render();restoreFocus(path,el.value)});
+
+render();
+</script>
+</body>
+</html>

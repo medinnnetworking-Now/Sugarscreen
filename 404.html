@@ -1,0 +1,23 @@
+---
+layout: base
+title: Page not found | DiaScreen
+description: That page isn't here.
+permalink: /404.html
+sitemap: false
+noindex: true
+body_class: lost-page
+---
+<main class="lost" id="contents">
+  <p class="eyebrow">404 &middot; Not found</p>
+  <h1>That page isn&rsquo;t here.</h1>
+  <p class="lede">The address may have changed. Head back to the start, or open a module directly.</p>
+  <ul class="lost-list">
+    {%- for t in site.data.tools %}
+    <li class="hue-{{ t.hue }}"><a href="{{ '/app/' | relative_url }}">{{ t.title }}</a></li>
+    {%- endfor %}
+  </ul>
+  <div class="lost-actions">
+    <a class="btn btn-primary" href="{{ '/' | relative_url }}">Go to the homepage</a>
+    <a class="btn btn-ghost" href="{{ '/app/' | relative_url }}">Open the app</a>
+  </div>
+</main>

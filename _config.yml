@@ -1,0 +1,24 @@
+# Site settings. The tools live in _data/tools.yml; see README.md.
+title: DiaScreen
+tagline: Diabetic complication screening
+description: >-
+  Screen one patient for retinopathy, kidney disease, diabetic foot and neuropathy in a
+  single visit. Guideline-based results, suggested actions and a recall date for each area.
+url: https://medinnnetworking-now.github.io
+baseurl: /Sugarscreen
+lang: en
+timezone: Asia/Kolkata
+
+author:
+  name: Your Name
+  role: Your role, your institution
+  email: you@example.com
+
+plugins:
+  - jekyll-sitemap
+
+exclude:
+  - README.md
+  - Gemfile
+  - Gemfile.lock
+  - vendor

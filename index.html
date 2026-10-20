@@ -1,0 +1,153 @@
+---
+layout: base
+title: DiaScreen | Diabetic complication screening
+body_class: home
+---
+{%- assign tools = site.data.tools -%}
+<main id="contents">
+
+<!-- hero -->
+<section class="hero" aria-labelledby="hero-title">
+  <div class="hero-inner">
+    <div class="hero-copy">
+      <p class="eyebrow">For clinicians &middot; Diabetes care</p>
+      <h1 id="hero-title">Screen the whole patient <em>in one visit.</em></h1>
+      <p class="lede">
+        Five guideline-based modules for glucose control, eyes, kidneys, feet and nerves. Enter findings or
+        take a photo, and get a colour-coded status, suggested actions and a recall date for each area.
+        Records stay in your own browser.
+      </p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="{{ '/app/' | relative_url }}">Open the app <span aria-hidden="true">&rarr;</span></a>
+        <a class="btn btn-ghost" href="#tools">See the modules <span aria-hidden="true">&darr;</span></a>
+      </div>
+    </div>
+
+    <figure class="specimen" aria-label="Example result: a patient status strip">
+      <figcaption>Example result</figcaption>
+      <div class="strip" role="list">
+        <div class="seg amber" role="listitem"><i></i><b>Glycaemia</b><small>Above target</small></div>
+        <div class="seg green" role="listitem"><i></i><b>Eye</b><small>No apparent DR</small></div>
+        <div class="seg amber" role="listitem"><i></i><b>Kidney</b><small>G2 A2</small></div>
+        <div class="seg red" role="listitem"><i></i><b>Foot</b><small>IWGDF 2: moderate</small></div>
+        <div class="seg amber" role="listitem"><i></i><b>Nerve</b><small>Possible neuropathy</small></div>
+      </div>
+      <p class="specimen-note">Illustrative only. Not a real patient.</p>
+    </figure>
+  </div>
+</section>
+
+<!-- tools -->
+<section class="tools" id="tools" aria-labelledby="tools-title">
+  <div class="section-head">
+    <div>
+      <p class="eyebrow">Screening modules</p>
+      <h2 id="tools-title">Five checks, one record</h2>
+    </div>
+    <label class="search">
+      <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"/><path d="m12.7 12.7 4.3 4.3"/></svg>
+      <span class="visually-hidden">Search the modules</span>
+      <input id="q" type="search" placeholder="Search: HbA1c, ulcer, UACR&hellip;" autocomplete="off" spellcheck="false" data-search>
+    </label>
+  </div>
+
+  <div class="cards" data-cards>
+    {%- for t in tools %}
+    <article class="card hue-{{ t.hue }}" id="t-{{ t.id }}" data-tool="{{ t.id }}"
+             data-text="{{ t.title }} {{ t.summary }} {{ t.inputs }} {{ t.outputs }} {{ t.basis }} {{ t.keywords }}">
+      <header class="card-head">
+        <span class="card-no" aria-hidden="true">{{ forloop.index }}</span>
+        <h3>{{ t.title }}</h3>
+      </header>
+      <p class="card-summary">{{ t.summary }}</p>
+      <dl class="card-specs">
+        <div><dt>In</dt><dd>{{ t.inputs }}</dd></div>
+        <div><dt>Out</dt><dd>{{ t.outputs }}</dd></div>
+        <div><dt>Basis</dt><dd>{{ t.basis }}</dd></div>
+      </dl>
+      <a class="card-go" href="{{ '/app/' | relative_url }}">Open in app <span aria-hidden="true">&rarr;</span></a>
+    </article>
+    {%- endfor %}
+  </div>
+
+  <div class="empty" data-empty hidden>
+    <p class="empty-title">Nothing matches <q data-empty-q></q>.</p>
+    <button type="button" class="btn btn-ghost" data-clear-search>Show all modules</button>
+  </div>
+  <p class="tools-note">Modules open inside the app, because each one belongs to a patient visit. Add a patient, record consent, then pick a module.</p>
+</section>
+
+<!-- how it works -->
+<section class="how" id="how" aria-labelledby="how-title">
+  <div class="section-head">
+    <div>
+      <p class="eyebrow">How it works</p>
+      <h2 id="how-title">From findings to a plan</h2>
+    </div>
+  </div>
+  <ol class="steps">
+    <li><span class="step-no">1</span><h3>Add a patient and record consent</h3><p>Name, age, sex and an optional patient ID. No module opens until consent is ticked.</p></li>
+    <li><span class="step-no">2</span><h3>Work through the modules</h3><p>Type values, tick findings or take photos of the fundus, dipstick and wound. Results update as you type.</p></li>
+    <li><span class="step-no">3</span><h3>Read the report</h3><p>One page with a status per organ, suggested actions, the next screening date and change since the last visit. Print or save as PDF.</p></li>
+  </ol>
+</section>
+
+<!-- guidelines -->
+<section class="basis" id="basis" aria-labelledby="basis-title">
+  <div class="section-head">
+    <div>
+      <p class="eyebrow">Evidence</p>
+      <h2 id="basis-title">Built on published guidelines</h2>
+    </div>
+  </div>
+  <ul class="refs">
+    <li>ADA Standards of Care in Diabetes: glycaemic targets, CKD, retinopathy, neuropathy and foot care</li>
+    <li>ICO Guidelines for Diabetic Eye Care and the International Clinical Diabetic Retinopathy (ICDR) severity scale</li>
+    <li>KDIGO 2022 Diabetes Management in CKD and KDIGO 2024 CKD guideline; CKD-EPI 2021 creatinine equation</li>
+    <li>IWGDF 2023 guidelines: risk stratification, offloading, PAD and infection (with IDSA); Wagner and SINBAD classifications</li>
+    <li>RSSDI clinical practice recommendations; WHO Asia-Pacific BMI cut-offs</li>
+    <li>Ipswich Touch Test (Rayman et al., 2011); automated CCM thresholds (Perkins et al., 2018)</li>
+  </ul>
+</section>
+
+<!-- about -->
+<section class="about" id="about" aria-labelledby="about-title">
+  <div class="about-main">
+    <p class="eyebrow">About</p>
+    <h2 id="about-title" class="about-lead">Complication screening that fits a clinic visit.</h2>
+    <p class="about-bio">
+      DiaScreen brings the checks recommended for people with diabetes into one workflow. It is a prototype
+      for evaluation and teaching, built by {{ site.author.name }} ({{ site.author.role }}).
+    </p>
+  </div>
+  <div class="about-side">
+    <div class="notice">
+      <p class="eyebrow">Privacy and safety</p>
+      <ul>
+        <li>Patient records and photos are stored only in the browser on your device. Nothing is sent to a server.</li>
+        <li>You are signed out after 15 minutes of inactivity.</li>
+        <li>The app uses a shared demo login. It is not real authentication, so do not enter identifiable patient data on a shared or public device.</li>
+        <li>Not a certified medical device. A clinical deployment needs individual accounts, encrypted storage, audit logs and regulatory approval.</li>
+      </ul>
+    </div>
+    <a class="card-cta" href="mailto:{{ site.author.email }}?subject=DiaScreen%20feedback">
+      <span class="eyebrow">Feedback</span>
+      <span class="card-cta-line">Suggest a module or report a problem <span aria-hidden="true">&rarr;</span></span>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "DiaScreen",
+  "description": {{ site.description | strip_newlines | strip | jsonify }},
+  "applicationCategory": "MedicalApplication",
+  "operatingSystem": "Web browser",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "author": { "@type": "Person", "name": {{ site.author.name | jsonify }} }
+}
+</script>

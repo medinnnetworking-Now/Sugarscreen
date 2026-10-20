@@ -1,0 +1,63 @@
+# One entry per screening module. This file drives the homepage cards, the search box,
+# the "how it works" strip and the 404 page, so each module is written down once.
+#
+#   id        slug; also the card anchor (#t-<id>)
+#   title     display name (matches the app)
+#   short     one-word label used in the status strip
+#   hue       green | blue | amber | red  (colour family, see assets/site.css)
+#   summary   one plain-English sentence for the card
+#   inputs    what the clinician enters or photographs
+#   outputs   what the module returns
+#   basis     the guideline it follows
+#   keywords  extra search words
+
+- id: status
+  title: Diabetic status
+  short: Glycaemia
+  hue: green
+  summary: Check glucose control, blood pressure, weight and lipids against guideline targets.
+  inputs: HbA1c · fasting and post-meal glucose · BP · weight and height · LDL · creatinine
+  outputs: At target, above target or poor control, with suggested therapy changes
+  basis: ADA Standards of Care; WHO Asia-Pacific BMI cut-offs
+  keywords: HbA1c BMI blood pressure LDL statin metformin insulin eGFR
+
+- id: retina
+  title: Retina
+  short: Eye
+  hue: blue
+  summary: Photograph both fundi, tick the lesions you see, and get a retinopathy grade with a referral plan.
+  inputs: Fundus photo per eye · lesion checklist · image gradability
+  outputs: ICDR grade 0 to 4, macular oedema flag, referral urgency
+  basis: ICDR severity scale; ICO guidelines (4-2-1 rule for severe NPDR)
+  keywords: diabetic retinopathy NPDR PDR DME fundus ophthalmology ICDR
+
+- id: kidney
+  title: Kidney
+  short: Kidney
+  hue: amber
+  summary: Read a urine dipstick from a phone photo, add UACR and creatinine, and see the KDIGO risk grid.
+  inputs: Dipstick photo on a white card · UACR · serum creatinine
+  outputs: eGFR (CKD-EPI 2021), G and A categories, KDIGO risk, ketone and UTI flags
+  basis: KDIGO 2022 and 2024; CKD-EPI 2021 creatinine equation
+  keywords: nephropathy CKD albuminuria UACR dipstick SGLT2 finerenone ACE ARB
+
+- id: foot
+  title: Diabetic foot
+  short: Foot
+  hue: red
+  summary: Test sensation and pulses, get an IWGDF risk class, and measure a wound from a photo.
+  inputs: Ipswich Touch Test · monofilament · vibration · pulses · ABI · ulcer details
+  outputs: IWGDF risk 0 to 3, Wagner and SINBAD scores, wound area in cm², actions
+  basis: IWGDF 2023; Ipswich Touch Test (Rayman 2011); Wagner and SINBAD classifications
+  keywords: ulcer neuropathy PAD ABI monofilament podiatry amputation offloading wound
+
+- id: nerve
+  title: Neuropathy and CCM
+  short: Nerve
+  hue: blue
+  summary: Combine symptoms, foot tests and corneal confocal nerve metrics to spot small-fibre neuropathy.
+  inputs: Symptom checklist · CNFL, CNFD, CNBD from a confocal microscope
+  outputs: Neuropathy status, treatment prompts, recall interval
+  basis: Automated CCM thresholds (Perkins 2018); ADA neuropathy guidance
+  keywords: corneal confocal microscopy small fibre autonomic pregabalin duloxetine B12
+
