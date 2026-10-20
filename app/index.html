@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>DiaScreen: diabetic complication screening</title>
+<link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
@@ -355,6 +356,7 @@ function evalFoot(v){const {f,notFelt,tested,lops,pad,abi,assessed}=footFlags(v)
  if(f.vib)L.push([f.vib==='absent'?'amber':'green',`128 Hz vibration: ${f.vib}`]);
  if(f.pulsesR||f.pulsesL)L.push([(f.pulsesR==='absent'||f.pulsesL==='absent')?'amber':'green',`Pedal pulses: right ${f.pulsesR||'not checked'}, left ${f.pulsesL||'not checked'}`]);
  if(abi!=null)L.push([(abi<0.9||abi>1.3)?'amber':'green',`ABI ${abi}${abi<0.9?' (peripheral artery disease)':abi>1.3?' (non-compressible: check toe pressures)':''}`]);
+ if(u.present==='yes'&&f.wound&&f.wound.ai)L.push(['na','Wound outline started from an AI suggestion ('+f.wound.ai.model+'); clinician to confirm the edge']);
  const ex=[];if(f.deformity)ex.push('foot deformity');if(f.callus)ex.push('callus');if(f.hxulcer)ex.push('previous ulcer');if(f.amputation)ex.push('previous amputation');if(f.esrd)ex.push('end-stage renal disease');
  if(ex.length)L.push(['amber','Risk factors: '+ex.join(', ')]);
  let risk=0;if(lops||pad){risk=1;if((lops&&pad)||f.deformity)risk=2;if(f.hxulcer||f.amputation||f.esrd)risk=3}
@@ -446,10 +448,22 @@ async function initDip(){const cv=$('#dipCanvas');if(!cv)return;const v=V();let 
   x.drawImage(img,0,0);const rgb=sample(x,px,py,Math.max(3,Math.round(img.width*0.008)));v.kidney.dipPts[dipTarget]={x:px,y:py,rgb};recomputeDip(v);
   const order=['white',...ANALYTES];const i=order.indexOf(dipTarget);if(i<order.length-1)dipTarget=order[i+1];save();render()}}
 
+let aiBusy=false;
+function aiSay(m){const e=$('#aiStatus');if(e)e.textContent=m||''}
+function loadAI(){return new Promise((res,rej)=>{if(window.DiaAI)return res();const s=document.createElement('script');s.src='../assets/ai/wound-ai.js';s.onload=()=>res();s.onerror=()=>rej(new Error('Could not load the AI module.'));document.head.appendChild(s)})}
+async function aiOutline(cv,img,px,py){if(aiBusy)return;aiBusy=true;const v=V(),w=v.foot.wound;
+ try{await loadAI();if(!window.DiaAI.supported())throw new Error('This browser cannot run the AI outline.');
+  const r=await window.DiaAI.outline(img,px,py,aiSay);
+  w.poly=r.poly;w.ai={model:window.DiaAI.model,score:Math.round(r.score*100)/100,t:Date.now()};syncArea(v);save();render();
+  aiSay(r.coverage>0.6?'The outline covers most of the photo, so check it carefully.':'');
+  toast('AI outline drawn. Check the edge by eye before relying on the area.')}
+ catch(e){aiSay('');toast(e&&e.message?e.message:'The AI outline failed.')}
+ finally{aiBusy=false}}
 function syncArea(v){const a=woundArea(v.foot);if(a!=null)v.foot.ulcer.area=a}
 function woundTool(){const f=V().foot,w=f.wound||{};const a=woundArea(f);
- return `<div class="tool"><div class="chips"><label class="chip"><input type="radio" name="wm" value="cal" ${woundMode==='cal'?'checked':''} data-act-r="wm"><span>Step 1: mark size reference</span></label><label class="chip"><input type="radio" name="wm" value="trace" ${woundMode==='trace'?'checked':''} data-act-r="wm"><span>Step 2: trace wound edge</span></label></div>
- <p class="sub">${woundMode==='cal'?'Tap both ends of the reference marker (ruler or size sticker) placed beside the wound.':'Tap points around the wound edge. The outline closes automatically.'}</p>
+ return `<div class="tool"><div class="chips"><label class="chip"><input type="radio" name="wm" value="cal" ${woundMode==='cal'?'checked':''} data-act-r="wm"><span>Step 1: mark size reference</span></label><label class="chip"><input type="radio" name="wm" value="trace" ${woundMode==='trace'?'checked':''} data-act-r="wm"><span>Step 2: trace wound edge</span></label><label class="chip"><input type="radio" name="wm" value="ai" ${woundMode==='ai'?'checked':''} data-act-r="wm"><span>Or: AI outline (beta)</span></label></div>
+ <p class="sub">${woundMode==='cal'?'Tap both ends of the reference marker (ruler or size sticker) placed beside the wound.':woundMode==='ai'?'Tap once inside the wound and the AI draws the edge. The first use downloads a model file (about 45 MB). Your photo stays on this device. Not right? Tap a different spot, or switch to Step 2 and trace by hand.':'Tap points around the wound edge. The outline closes automatically.'}</p>
+ <p class="sub" id="aiStatus" role="status"></p>
  <canvas id="woundCanvas" role="img" aria-label="Wound photo for measurement"></canvas>
  <div class="toolrow"><label class="field mini"><span class="lab">Reference length</span><span class="inp"><input type="number" step="any" min="0.1" inputmode="decimal" data-b="foot.wound.calLen" data-rr="1"><em>cm</em></span></label><button type="button" class="btn ghost sm" data-act="wundo">Undo point</button><button type="button" class="btn ghost sm" data-act="wclear">Clear step</button></div>
  <p class="measure">${a!=null?`Measured area: <b>${a} cm²</b>`:((w.cal||[]).length<2?'Mark the reference to enable measurement.':'Trace at least 3 points around the wound.')}</p></div>`}
@@ -461,7 +475,8 @@ async function initWound(){const cv=$('#woundCanvas');if(!cv)return;const v=V();
  if(w.cal.length){x.lineWidth=lw;x.strokeStyle='#19C3D0';if(w.cal.length===2){x.beginPath();x.moveTo(w.cal[0].x,w.cal[0].y);x.lineTo(w.cal[1].x,w.cal[1].y);x.stroke()}
   w.cal.forEach(p=>{x.beginPath();x.arc(p.x,p.y,r*1.2,0,7);x.fillStyle='#19C3D0';x.fill();x.strokeStyle='#000';x.lineWidth=lw/1.5;x.stroke()})}
  cv.onclick=e=>{const rc=cv.getBoundingClientRect();const pt={x:(e.clientX-rc.left)*cv.width/rc.width,y:(e.clientY-rc.top)*cv.height/rc.height};
-  if(woundMode==='cal'){if(w.cal.length>=2)w.cal=[];w.cal.push(pt);if(w.cal.length===2){woundMode='trace';toast('Reference marked. Now trace the wound edge.')}}else w.poly.push(pt);
+  if(woundMode==='ai'){aiOutline(cv,img,pt.x,pt.y);return}
+  if(woundMode==='cal'){if(w.cal.length>=2)w.cal=[];w.cal.push(pt);if(w.cal.length===2){woundMode='trace';toast('Reference marked. Now trace the wound edge.')}}else{if(w.ai){w.poly=[];delete w.ai}w.poly.push(pt)}
   syncArea(v);save();render()}}
 
 /* ---------- UI pieces ---------- */
@@ -591,7 +606,7 @@ report:()=>{const p=P(),v=V();const evs=MODS.map(m=>[m,m.ev(v,p)]);const idx=p.v
 about:()=>bar('About DiaScreen','home')+`<main>
  <section class="card"><h2>What it does</h2><p class="sub">Screens one patient across five areas in a single visit: glycaemic and cardiometabolic status, retinopathy, nephropathy, diabetic foot, and neuropathy with corneal confocal microscopy. Each module turns findings into a guideline-based status, suggested actions and a rescreening interval.</p></section>
  <section class="card"><h2>Data and security</h2><ul class="lines">
- <li class="green">Records and photos are stored only in this browser on this device. Nothing is sent to a server.</li>
+ <li class="green">Records and photos are stored only in this browser on this device. No patient data is sent to a server. The optional AI wound outline downloads a model file once (about 45 MB); your photo stays on the device.</li>
  <li class="green">Sessions end after 15 minutes of inactivity or when the browser tab closes.</li>
  <li class="green">Consent must be recorded before any module or image capture opens.</li>
  <li class="green">Photos are downscaled before saving to limit storage.</li>
@@ -650,7 +665,7 @@ function act(a){const [n,arg]=a.split(':');const p=P(),v=V();
  case 'apply':{const e=v.retina[arg];e.grade=String(suggest(e));e.dme=(e.les||{}).mac?'yes':'no';save();render();break}
  case 'itt':{const it=v.foot.itt;const s=it[arg];if(!s)it[arg]='felt';else if(s==='felt')it[arg]='not';else delete it[arg];save();render();break}
  case 'wundo':{const w=v.foot.wound;(woundMode==='cal'?w.cal:w.poly).pop();syncArea(v);save();render();break}
- case 'wclear':{const w=v.foot.wound;if(woundMode==='cal')w.cal=[];else w.poly=[];syncArea(v);save();render();break}
+ case 'wclear':{const w=v.foot.wound;if(woundMode==='cal')w.cal=[];else{w.poly=[];delete w.ai}syncArea(v);save();render();break}
  case 'print':try{window.print()}catch(e){toast('Printing is not available here. Use the browser’s share or print menu.')}break;
  case 'wipe':ask('Delete all patients, visits and photos stored in this browser?','Delete all',()=>{DB={patients:[]};save();toast('All screening data deleted from this device.');go('home',{})});break;
  }}

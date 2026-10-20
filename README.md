@@ -36,3 +36,21 @@ The app has a hard-coded demo login (`clinician` / `screen2026`) that anyone can
 source. It is not authentication. Patient records live only in the browser (`localStorage`), so do not
 enter identifiable data on shared devices. A clinical deployment needs individual accounts,
 encrypted storage, audit logs and regulatory approval.
+
+## AI wound outline (beta)
+
+In the foot module, after marking the size reference, choose **Or: AI outline (beta)** and tap inside the
+wound. A Segment Anything model (MobileSAM, ONNX) runs in the browser, draws the edge, and the area is
+calculated with the existing calibration. The photo never leaves the device.
+
+- `assets/ai/wound-ai.js` loads the runtime and model, runs it, and turns the mask into an outline.
+- `assets/vendor/ort/` is the ONNX Runtime Web build (Microsoft, MIT), self-hosted.
+- The two model files are looked for at `models/mobile_sam_image_encoder.onnx` and
+  `models/sam_mask_decoder_multi.onnx` in this repo, then fetched from Hugging Face (`Acly/MobileSAM`).
+  The browser caches them after the first download.
+- To use other model URLs, set `window.DIA_AI_MODELS = { encoder: [url], decoder: [url] }` before the module loads.
+
+Status: the plumbing is tested with a stand-in model (area error under 1% on a synthetic wound). It has
+**not** been tested with the real MobileSAM weights or on real wounds. Validate it against ruler or
+planimetry measurements before relying on it, and always check the edge by eye.
+
